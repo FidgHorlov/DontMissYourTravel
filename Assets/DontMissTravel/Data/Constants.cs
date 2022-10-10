@@ -31,5 +31,10 @@
             public const string SpeedBoosted = "Your speed increased";
             public const string GreenTicket = "You got green ticket";
         }
+
+        public static class ScriptOrder
+        {
+            public const int KeepDataManager = -1;
+        }
     }
 }

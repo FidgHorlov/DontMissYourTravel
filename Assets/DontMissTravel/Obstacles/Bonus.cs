@@ -4,6 +4,7 @@ using DG.Tweening;
 using DontMissTravel.Data;
 using DontMissTravel.Persons;
 using UnityEngine;
+using UnityEngine.Purchasing.Extension;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
@@ -11,34 +12,38 @@ namespace DontMissTravel.Obstacles
 {
     public class Bonus : MonoBehaviour
     {
-        private enum BonusType
-        {
-            TimeDelay,
-            SpeedBoost,
-            Invisible
-        }
-        
         private const float FadeDuration = 0.5f;
-        private const float BonusLifeTime = 5f;
+        private const float DefaultBonusLifeTime = 5f;
 
         [SerializeField] private GameObject _visual;
-        [SerializeField] private Image _bonusImage;
         [SerializeField] private Collider2D _collider;
 
+        [Space]
+        [SerializeField] private Image _bonusImage;
+        [SerializeField] private Sprite _timeDelay;
+        [SerializeField] private Sprite _speedBoost;
+        [SerializeField] private Sprite _invisible;
+
         private Transform _currentTransform;
+        private BonusType _currentBonusType;
+        
         private Player _player;
+        private float _lifeTime;
 
         public bool IsDelay { get; private set; }
 
         public void Init(Player player)
         {
             _player = player;
+            _currentBonusType = GetBonusType();
+            _lifeTime = DefaultBonusLifeTime;
         }
 
         private void Awake()
         {
             _currentTransform = transform;
             SetActive(false);
+            SetBonusVisual();
         }
 
         public void SetActiveInTime(bool toShow, Vector2 position = default)
@@ -46,7 +51,7 @@ namespace DontMissTravel.Obstacles
             if (toShow)
             {
                 _currentTransform.position = position;
-                StartCoroutine(nameof(HideAfterTime), BonusLifeTime);
+                StartCoroutine(nameof(HideAfterTime), _lifeTime);
                 SetActive(true);
             }
 
@@ -62,6 +67,28 @@ namespace DontMissTravel.Obstacles
                 .SetId(_bonusImage);
         }
 
+        protected void ChangeBonusLifeTime(float newTime)
+        {
+            _lifeTime = newTime;
+            StopCoroutine(nameof(HideAfterTime));
+        }
+
+        private void SetBonusVisual()
+        {
+            switch (_currentBonusType)
+            {
+                case BonusType.TimeDelay:
+                    _bonusImage.sprite = _timeDelay;
+                    break;
+                case BonusType.SpeedBoost:
+                    _bonusImage.sprite = _speedBoost;
+                    break;
+                case BonusType.Invisible:
+                    _bonusImage.sprite = _invisible;
+                    break;
+            }
+        }
+
         private IEnumerator HideAfterTime(float delay)
         {
             yield return new WaitForSeconds(delay);
@@ -72,19 +99,19 @@ namespace DontMissTravel.Obstacles
                 .SetId(_bonusImage);
         }
 
-        private void OnTriggerEnter2D(Collider2D other)
+        protected virtual void OnTriggerEnter2D(Collider2D other)
         {
             if (!other.CompareTag(Constants.Tags.Player))
             {
                 return;
             }
 
-            SetBonus(GetBonusType());
+            SetBonusPower(_currentBonusType);
             StopCoroutine(nameof(HideAfterTime));
             SetActive(false);
         }
 
-        private void SetBonus(BonusType bonusType)
+        private void SetBonusPower(BonusType bonusType)
         {
             switch (bonusType)
             {
@@ -130,19 +157,19 @@ namespace DontMissTravel.Obstacles
         [ContextMenu("Delay")]
         private void Delay()
         {
-            SetBonus(BonusType.TimeDelay);
+            SetBonusPower(BonusType.TimeDelay);
         }
         
         [ContextMenu("Invisible")]
         private void Invisible()
         {
-            SetBonus(BonusType.Invisible);
+            SetBonusPower(BonusType.Invisible);
         }
         
         [ContextMenu("Speed")]
         private void Speed()
         {
-            SetBonus(BonusType.SpeedBoost);
+            SetBonusPower(BonusType.SpeedBoost);
         }
     }
 }

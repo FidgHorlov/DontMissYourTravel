@@ -2,7 +2,6 @@
 using System.Collections;
 using DontMissTravel.Data;
 using UnityEngine;
-using Action = DontMissTravel.Data.Action;
 using Random = UnityEngine.Random;
 using Direction = DontMissTravel.Data.Direction;
 using EnemyType = DontMissTravel.Data.EnemyType;
@@ -17,11 +16,11 @@ namespace DontMissTravel.Persons
         [SerializeField] private EnemyName _enemyName;
 
         private Direction _previousDirection = Direction.Idle;
+        private Vector2 _lastCollisionPosition;
 
         private bool _toChangeDirection;
         private bool _isStop;
         private bool _isMeet;
-
         private float _detectDistance;
 
         public EnemyType EnemyType => _enemyType;
@@ -30,7 +29,7 @@ namespace DontMissTravel.Persons
         protected override void Awake()
         {
             base.Awake();
-            GameController.Instance.OnGameStateChanged += OnGameStateChanged;
+            GameController.OnGameStateChanged += OnGameStateChanged;
             bool isRight = Random.Range(0, 2) == 0;
             bool isTop = Random.Range(0, 2) == 0;
             Move(WhereToGo(isRight, isTop), _speed);
@@ -38,7 +37,7 @@ namespace DontMissTravel.Persons
 
         private void OnDestroy()
         {
-            GameController.Instance.OnGameStateChanged -= OnGameStateChanged;
+            GameController.OnGameStateChanged -= OnGameStateChanged;
         }
 
         private void OnGameStateChanged(GameState gameState)
@@ -46,17 +45,17 @@ namespace DontMissTravel.Persons
             switch (gameState)
             {
                 case GameState.Play:
-                    CurrentAction = Action.Move;
+                    _currentPersonAction = PersonAction.Move;
                     break;
                 case GameState.HideGame:
-                    CurrentAction = Action.Stay;
+                    _currentPersonAction = PersonAction.Stay;
                     break;
                 case GameState.Pause:
-                    CurrentAction = Action.Stay;
+                    _currentPersonAction = PersonAction.Stay;
                     break;
             }
 
-            SwitchSprites(CurrentAction);
+            SwitchSprites(_currentPersonAction);
             if (gameState != GameState.Play)
             {
                 _rigidbody.velocity = Vector2.zero;
@@ -113,7 +112,7 @@ namespace DontMissTravel.Persons
 
         private void OnCollisionStay2D(Collision2D other)
         {
-            if (GameController.Instance.GameState != GameState.Play)
+            if (GameController.GameState != GameState.Play)
             {
                 StopCoroutine(nameof(CheckThePosition));
                 return;
@@ -131,17 +130,15 @@ namespace DontMissTravel.Persons
             StartCoroutine(nameof(CheckThePosition));
         }
 
-        private Vector2 _lastCollisionPosition;
-
         private IEnumerator CheckThePosition()
         {
             yield return new WaitForSeconds(1f);
-            if (GameController.Instance.GameState == GameState.HideGame)
+            if (GameController.GameState == GameState.HideGame)
             {
                 yield break;
             }
 
-            if (CurrentAction != Action.Stay)
+            if (_currentPersonAction != PersonAction.Stay)
             {
                 yield break;
             }

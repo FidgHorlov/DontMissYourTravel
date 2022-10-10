@@ -29,9 +29,7 @@ namespace DontMissTravel.Ui
                 _gateClosed,
             };
 
-            _attentionGameObject.SetActive(false);
-            _remarkInfo.SetActive(false);
-            _remarkGroup.SetActiveImmediate(false);
+            HideAllStaticInfo();
         }
 
         public void SetGateOpenTime(float openIn)
@@ -79,9 +77,21 @@ namespace DontMissTravel.Ui
             _currentLevel.SetDynamicText(currentLevel);
         }
 
+        private void HideAllStaticInfo()
+        {
+            _attentionGameObject.SetActive(false);
+            _remarkInfo.SetActive(false);
+            _remarkGroup.SetActiveImmediate(false);
+        }
+
+        public void PrepareTutorialInfo()
+        {
+            HideAllStaticInfo();
+            _departureIn.SetActive(false);
+        }
+
         private void HideAllExcept(InfoSection infoSection)
         {
-            
             foreach (InfoSection section in _nonStaticInfoSections)
             {
                 if (section != infoSection)

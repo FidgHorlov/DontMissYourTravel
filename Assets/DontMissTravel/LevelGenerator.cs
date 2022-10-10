@@ -42,6 +42,10 @@ namespace DontMissTravel
         {
             _instance = this;
             _currentLevel = PlayerPrefs.GetInt("Level");
+            if (_currentLevel == 0)
+            {
+                _currentLevel = 0;
+            }
         }
 
         private void Start()

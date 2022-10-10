@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using _Project.Gates;
+using System.Globalization;
 using DontMissTravel.Data;
+using DontMissTravel.Gates;
 using DontMissTravel.HideGame;
 using DontMissTravel.Obstacles;
 using DontMissTravel.Persons;
 using DontMissTravel.Ui;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 using Random = UnityEngine.Random;
 using GameState = DontMissTravel.Data.GameState;
 using WindowName = DontMissTravel.Data.WindowName;
@@ -17,13 +17,13 @@ namespace DontMissTravel
 {
     public class GameController : MonoBehaviour
     {
+        public event Action OnTutorialTimeOut;
         private static GameController _instance;
 
+        [SerializeField] protected HideGameController _hideGame;
         [SerializeField] private GateController _gateController;
-        [SerializeField] private HideGameController _hideGame;
         [SerializeField] private Player _player;
         [Space] [SerializeField] private float _maxGameTime;
-        [SerializeField] private float _departureTime;
         [Space] [SerializeField] private GameObject _musicMute;
         [SerializeField] private GameObject _soundMute;
         [Space] [SerializeField] private Bonus _bonus;
@@ -40,6 +40,7 @@ namespace DontMissTravel
         private bool _gateIsOpen = false;
         private float _timer = 0f;
         private float _timeForBonus;
+        private float _departureTime;
 
 #region Properties
 
@@ -90,12 +91,16 @@ namespace DontMissTravel
 #endif
         }
 
+        private void OnEnable()
+        {
+            CheckDepartureTime();
+            _timeForBonus = Random.Range(0, _maxGameTime);
+        }
+
         private void Start()
         {
             _hud = Hud.Instance;
             _hud.Controller.SetActive(_isPhone);
-            CheckDepartureTime();
-            _timeForBonus = Random.Range(0, _maxGameTime);
         }
 
         private void Update()
@@ -108,12 +113,20 @@ namespace DontMissTravel
             float timeLeft = GetTimeLeft();
             if (timeLeft <= 0)
             {
+                if (_gameState == GameState.Tutorial)
+                {
+                    CheckDepartureTime();
+                    _hud.ChangeGateState(GateState.WillOpen, timeLeft.ToString(CultureInfo.CurrentCulture));
+                    OnTutorialTimeOut?.Invoke();
+                    return;
+                }
+                
                 _hud.ChangeGateState(GateState.Closed, null);
                 _hud.ShowHideWindow(WindowName.Lose, true);
                 SwitchGameState(GameState.Pause);
                 return;
             }
-            
+
             if (timeLeft < _departureTime || (_gateIsOpen && _bonus.IsDelay))
             {
                 _hud.SetGateWillClose(timeLeft);
@@ -126,12 +139,14 @@ namespace DontMissTravel
             {
                 _hud.SetGateWillOpenTime(timeLeft);
             }
-
-            if (_gameState == GameState.HideGame)
-            {
-                return;
-            }
             
+            switch (_gameState)
+            {
+                case GameState.Tutorial:
+                case GameState.HideGame:
+                    return;
+            }
+
             if (timeLeft < _timeForBonus && timeLeft > 0)
             {
                 CreateBonus();
@@ -150,7 +165,26 @@ namespace DontMissTravel
             Debug.Log($"<b>Game state changed</b> -> {gameState.ToString()}");
         }
 
-        private void OnPlayerReachedGate()
+        public void SetCustomGameTime(float maxTime)
+        {
+            _timer = 0f;
+            _maxGameTime = maxTime;
+            if (_hud != null)
+            {
+                _hud.SetGateWillOpenTime(maxTime);
+            }
+        }
+        
+        public void OpenGateDecreaseMaxTime(float newMaxTime)
+        {
+            _timer = 0f;
+            _maxGameTime = newMaxTime;
+            _departureTime = newMaxTime;
+            _hud.SetGateWillClose(GetTimeLeft());
+            OpenGate();
+        }
+
+        protected virtual void OnPlayerReachedGate()
         {
             _hud.ShowHideWindow(WindowName.Win, true);
             SwitchGameState(GameState.Pause);
@@ -162,24 +196,10 @@ namespace DontMissTravel
             _departureTime = _maxGameTime / 2.5f;
         }
 
-        private void CreateBonus()
+        protected void CreateBonus()
         {
             _bonus.SetActiveInTime(true, GetRandomAvailablePosition());
             _timeForBonus = -1;
-        }
-
-        private void CheckTime(float time)
-        {
-            if (time > 0)
-            {
-                _hud.SetGateWillOpenTime(time);
-            }
-            else
-            {
-                _hud.ChangeGateState(GateState.Closed, null);
-                _hud.ShowHideWindow(WindowName.Lose, true);
-                SwitchGameState(GameState.Pause);
-            }
         }
 
         private float GetTimeLeft()
@@ -283,6 +303,12 @@ namespace DontMissTravel
 
         public void OnApplicationQuit()
         {
+            LevelGenerator levelGenerator = LevelGenerator.Instance;
+            if (levelGenerator == null)
+            {
+                return;
+            }
+
             PlayerPrefs.SetInt("Level", LevelGenerator.Instance.CurrentLevel);
         }
 

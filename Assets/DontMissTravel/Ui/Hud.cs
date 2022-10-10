@@ -87,6 +87,11 @@ namespace DontMissTravel.Ui
             _infoPanel.SetDepartureTime(inTime);
         }
 
+        public void PrepareTutorialInfo()
+        {
+            _infoPanel.PrepareTutorialInfo();
+        }
+
         private void OnPauseClick()
         {
             ShowHideWindow(WindowName.Pause, true);

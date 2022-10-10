@@ -16,12 +16,31 @@
         Closed
     }
 
-    public enum Action
+    public enum PersonAction
     {
+        None = -1,
         Move,
         Grab,
         Meet,
         Stay
+    }
+
+    public enum TutorialState
+    {
+        Welcome,
+        DepartureIn,
+        Level,
+        Movement,
+        Obstacles,
+        Enemy,
+        HideGamePreview,
+        HideGame,
+        BonusPreview,
+        Bonus,
+        Remark,
+        Gate,
+        TutorialGame,
+        Complete,
     }
 
     public enum EnemyType
@@ -51,7 +70,8 @@
     {
         Play,
         HideGame,
-        Pause
+        Pause,
+        Tutorial
     }
 
     public enum TypeOfLevel
@@ -71,7 +91,7 @@
     public enum BonusType
     {
         TimeDelay,
-        SpeedUpgrade,
+        SpeedBoost,
         Invisible
     }
 }

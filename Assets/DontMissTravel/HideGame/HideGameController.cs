@@ -2,6 +2,7 @@
 using System.Collections;
 using DontMissTravel.Data;
 using DontMissTravel.Persons;
+using DontMissTravel.Tutorial;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -19,7 +20,6 @@ namespace DontMissTravel.HideGame
         private const float MaxSpeed = 0.15f;
         private const float HowLong = 15f;
 
-        [SerializeField] private Camera _hideGameCamera;
         [SerializeField] private HideGameEnemy _enemy;
         [SerializeField] private RectTransform _player;
         [SerializeField] private RectTransform _hideGameField;
@@ -35,6 +35,7 @@ namespace DontMissTravel.HideGame
 
         private Vector2 _playerPosition1;
         private Vector2 _playerPosition2;
+        private Vector2 _initPlayerPosition;
 
         private bool _gameStateIsPause;
 
@@ -64,6 +65,7 @@ namespace DontMissTravel.HideGame
 
         public void StartHideGame(EnemyName enemyName)
         {
+            _player.position = _initPlayerPosition;
             gameObject.SetActive(true);
             StopCoroutine(nameof(ChangePosition));
             StartCoroutine(nameof(ChangePosition));
@@ -100,12 +102,6 @@ namespace DontMissTravel.HideGame
                 return;
             }
 
-            // if (Input.GetMouseButtonDown(0))
-            // {
-            //     Vector3 mousePosition = _hideGameCamera.ScreenToWorldPoint(Input.mousePosition);
-            //     CheckPosition(mousePosition.x);
-            // }
-
             if (IsHorizontalKeyboard())
             {
                 CheckPosition(Input.GetAxis("Horizontal"));
@@ -137,24 +133,16 @@ namespace DontMissTravel.HideGame
             
             Debug.Log($"Rect width = {rectWidth}. Left center: {leftCenterX}. Right: {rightCenterX}");
 
-            // float enemyPositionMinX = -_enemyRectTransform.sizeDelta.x;
-            // float enemyPositionMaxX = enemyPositionMinX * -1f;
-
             _enemyPosition1 = _enemyRectTransform.anchoredPosition;
             _enemyPosition2 = _enemyPosition1;
-
-            // _enemyPosition1.x = enemyPositionMinX;
-            // _enemyPosition2.x = enemyPositionMaxX;
 
             _enemyPosition1.x = leftCenterX;
             _enemyPosition2.x = rightCenterX;
             
             Debug.Log($"Enemy position 1: {_enemyPosition1}. Enemy position 2: {_enemyPosition2}");
 
-            // float playerPositionMinX = -_player.sizeDelta.x / 2f;
-            // float playerPositionMaxX = playerPositionMinX * -1f;
-
-            _playerPosition1 = _player.position;
+            _initPlayerPosition = _player.position;
+            _playerPosition1 = _initPlayerPosition;
             _playerPosition2 = _playerPosition1;
 
             _playerPosition1.x = leftCenterX;
@@ -171,7 +159,16 @@ namespace DontMissTravel.HideGame
                 return;
             }
 
-            _gameController.OpenHideGame(false);
+            TutorialGame tutorialGame = _gameController as TutorialGame;
+            if (tutorialGame != null)
+            {
+                tutorialGame.CloseHideGame();
+            }
+            else
+            {
+                _gameController.OpenHideGame(false);    
+            }
+            
             StopCoroutine(nameof(ChangePosition));
         }
     }

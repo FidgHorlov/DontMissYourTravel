@@ -52,8 +52,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _visual: {fileID: 6618846355210852325}
-  _bonusImage: {fileID: 2176135166848675940}
   _collider: {fileID: 2055812297756829014}
+  _bonusImage: {fileID: 2176135166848675940}
+  _timeDelay: {fileID: 21300000, guid: 04c97a85a1a56954e899f07b34a02ebd, type: 3}
+  _speedBoost: {fileID: 21300000, guid: 9c71791f239d3c44fa23251acd526c60, type: 3}
+  _invisible: {fileID: 21300000, guid: 68c30d2534c32954baa19ddd81cfbf34, type: 3}
 --- !u!58 &2055812297756829014
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -129,14 +132,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.75637496, g: 1, b: 0.4198113, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: 04c97a85a1a56954e899f07b34a02ebd, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

@@ -33,16 +33,20 @@ namespace DontMissTravel.Ui
         {
             gameObject.SetActive(isActivate);
         }
-
-
+        
         public void SetDynamicText(string text)
         {
             _dynamicText.text = text;
         }
 
-        public void SetDynamicText(float timeLeft)
+        public void SetDynamicText(float floatValue)
         {
-            _dynamicText.text = timeLeft.ToString(Constants.FloatTextFormat);
+            _dynamicText.text = floatValue.ToString(Constants.FloatTextFormat);
+        }
+
+        public void SetDynamicText(int intValue)
+        {
+            _dynamicText.text = intValue.ToString();
         }
     }
 }

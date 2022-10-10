@@ -1,9 +1,10 @@
 using System;
+using DontMissTravel.Data;
 using DontMissTravel.Persons;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace _Project.Gates
+namespace DontMissTravel.Gates
 {
     public class Gate : MonoBehaviour
     {
@@ -20,7 +21,9 @@ namespace _Project.Gates
 
         private void OnTriggerStay2D(Collider2D other)
         {
-            if (!other.gameObject.GetComponent<Player>())
+            string otherTag = other.tag;
+
+            if (!otherTag.Equals(Constants.Tags.Player))
             {
                 return;
             }

@@ -2,7 +2,6 @@
 using DontMissTravel.Data;
 using UnityEngine;
 using UnityEngine.UI;
-using Action = DontMissTravel.Data.Action;
 using Direction = DontMissTravel.Data.Direction;
 
 namespace DontMissTravel.Persons
@@ -11,17 +10,15 @@ namespace DontMissTravel.Persons
     {
         [SerializeField] protected Rigidbody2D _rigidbody;
         [SerializeField] protected Collider2D _collider2D;
-        [Space]
-        [SerializeField] protected Image _targetImage;
+        [Space] [SerializeField] protected Image _targetImage;
         [SerializeField] private Sprite _idleSprite;
         [SerializeField] private Sprite[] _moveSprites;
-        [Space]
-        [SerializeField] private float _switchSpriteLimitTimer;
+        [SerializeField] private Sprite[] _grabSprites;
+        [Space] [SerializeField] private float _switchSpriteLimitTimer;
 
-        protected Action CurrentAction;
-        protected Sprite[] CurrentSprites;
+        [SerializeField] protected PersonAction _currentPersonAction;
+        private Sprite[] _currentSprites;
 
-        private GameController _gameController;
         private Transform _currentTransform;
         private float _timer = 0f;
         private int _spriteIndex = 0;
@@ -31,32 +28,47 @@ namespace DontMissTravel.Persons
         protected virtual void Awake()
         {
             _currentTransform = transform;
-            _gameController = GameController.Instance;
-            _gameController.OnGameStateChanged += OnGameStateChanged;
+        }
+
+        protected GameController GameController => GameController.Instance;
+
+        private void Start()
+        {
+            GameController.OnGameStateChanged += OnGameStateChanged;
         }
 
         private void OnDestroy()
         {
-            _gameController.OnGameStateChanged -= OnGameStateChanged;
+            GameController.OnGameStateChanged -= OnGameStateChanged;
         }
 
         private void LateUpdate()
         {
-            if (_gameController.GameState != GameState.Play)
+            if (GameController.GameState != GameState.Play && GameController.GameState != GameState.Tutorial)
             {
                 if (_isPersonStay)
                 {
                     return;
                 }
-                
+
                 _isPersonStay = true;
                 _targetImage.sprite = _idleSprite;
                 Move(Direction.Idle, 0f); // when it pause shouldn't be able walk    
                 return;
             }
-            
-            if (CurrentAction == Action.Stay || CurrentSprites == null)
+
+            if (_currentPersonAction != PersonAction.Move && _currentPersonAction != PersonAction.Grab)
             {
+                return;
+            }
+
+            if (_currentSprites == null)
+            {
+                if (_currentPersonAction == PersonAction.Move)
+                {
+                    SwitchSprites(PersonAction.Move);
+                }
+                
                 return;
             }
 
@@ -64,12 +76,12 @@ namespace DontMissTravel.Persons
             if (_timer > _switchSpriteLimitTimer)
             {
                 _spriteIndex++;
-                if (_spriteIndex > CurrentSprites.Length - 1)
+                if (_spriteIndex > _currentSprites.Length - 1)
                 {
                     _spriteIndex = 0;
                 }
 
-                _targetImage.sprite = CurrentSprites[_spriteIndex];
+                _targetImage.sprite = _currentSprites[_spriteIndex];
                 _timer = 0f;
             }
         }
@@ -85,28 +97,30 @@ namespace DontMissTravel.Persons
         protected void Move(Direction direction, float speed)
         {
             Vector2 velocity = Vector2.zero;
-            bool stop = direction == Direction.Idle; //stop if toWhere == Stop
-            
+            bool stop = direction == Direction.Idle;
+            PersonAction tempPersonAction = PersonAction.None;
+
             if (!stop)
             {
-                if (CurrentAction == Action.Stay)
-                {
-                    CurrentAction = Action.Move;
-                }
-                
                 Vector3 scale = _currentTransform.localScale;
                 switch (direction)
                 {
                     case Direction.Left:
                     {
                         velocity = Vector2.left;
-                        scale.x = 1f;
+                        if (_currentPersonAction != PersonAction.Grab)
+                        {
+                            scale.x = 1f;   
+                        }
                         break;
                     }
                     case Direction.Right:
                     {
                         velocity = Vector2.right;
-                        scale.x = -1f;
+                        if (_currentPersonAction != PersonAction.Grab)
+                        {
+                            scale.x = -1f;
+                        }
                         break;
                     }
                     case Direction.Up:
@@ -120,33 +134,71 @@ namespace DontMissTravel.Persons
                         break;
                     }
                 }
+                
+                if (_currentPersonAction == PersonAction.Grab)
+                {
+                    SwitchSprites(PersonAction.Grab);
+                    _rigidbody.velocity = velocity * speed;
+                    return;      
+                }
 
                 _currentTransform.localScale = scale;
-                SwitchSprites(Action.Move);
+                tempPersonAction = PersonAction.Move;
             }
             else
             {
+                Player player = this as Player;
+                if (player != null)
+                {
+                    if (_currentPersonAction == PersonAction.Grab && player.IsPulling)
+                    {
+                        SwitchSprites(PersonAction.Grab);
+                        _rigidbody.velocity = velocity * speed;
+                        return;      
+                    }
+                }
+                
                 velocity = Vector2.zero;
                 _rigidbody.angularVelocity = 0f;
-                SwitchSprites(Action.Stay);
-                CurrentAction = Action.Stay;
+                tempPersonAction = PersonAction.Stay;
             }
 
+            if (_currentPersonAction != tempPersonAction)
+            {
+                _currentPersonAction = tempPersonAction;
+                SwitchSprites(_currentPersonAction);
+            }
+            
             _rigidbody.velocity = velocity * speed;
         }
 
-        protected virtual void SwitchSprites(Action action)
+        protected void SwitchSprites(PersonAction personAction)
         {
-            switch (action)
+            switch (personAction)
             {
-                case Action.Move:
+                case PersonAction.Move:
                 {
-                    CurrentSprites = _moveSprites;
+                    _currentSprites = _moveSprites;
                     break;
                 }
-                case Action.Stay:
+                case PersonAction.Stay:
                 {
                     _targetImage.sprite = _idleSprite;
+                    break;
+                }
+                case PersonAction.Meet when this is Player:
+                {
+                    _targetImage.sprite = _idleSprite;
+                    break;
+                }
+                case PersonAction.Grab when this is Player:
+                {
+                    _currentSprites = _grabSprites;
+                    break;
+                }
+                default:
+                {
+                    Debug.LogError($"[{name}] Something wrong here! Action: {personAction}");
                     break;
                 }
             }
