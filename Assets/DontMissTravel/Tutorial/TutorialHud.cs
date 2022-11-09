@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using DontMissTravel.Audio;
 using DontMissTravel.Data;
 using DontMissTravel.Ui;
 using UnityEngine;
+using AudioType = DontMissTravel.Audio.AudioType;
 
 namespace DontMissTravel.Tutorial
 {
@@ -19,6 +21,7 @@ namespace DontMissTravel.Tutorial
 
         private void OnEnable()
         {
+            _currentState = 0;
             HideAllStagesExcept(_tutorialHudStages[0]);
             foreach (TutorialHudStage hudStage in _tutorialHudStages)
             {
@@ -115,6 +118,7 @@ namespace DontMissTravel.Tutorial
             TutorialStateChanged?.Invoke(nextTutorial);
             Debug.Log($"Current tutorial state: {nextTutorial}");
             _currentState = nextTutorial;
+            AudioManager.Instance.PlaySfx(AudioType.MenuClick);
         }
     }
 }

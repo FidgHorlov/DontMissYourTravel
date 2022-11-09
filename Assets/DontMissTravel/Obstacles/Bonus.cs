@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections;
 using DG.Tweening;
+using DontMissTravel.Audio;
 using DontMissTravel.Data;
 using DontMissTravel.Persons;
 using UnityEngine;
 using UnityEngine.Purchasing.Extension;
 using UnityEngine.UI;
+using AudioType = DontMissTravel.Audio.AudioType;
 using Random = UnityEngine.Random;
 
 namespace DontMissTravel.Obstacles
@@ -18,15 +20,14 @@ namespace DontMissTravel.Obstacles
         [SerializeField] private GameObject _visual;
         [SerializeField] private Collider2D _collider;
 
-        [Space]
-        [SerializeField] private Image _bonusImage;
+        [Space] [SerializeField] private Image _bonusImage;
         [SerializeField] private Sprite _timeDelay;
         [SerializeField] private Sprite _speedBoost;
         [SerializeField] private Sprite _invisible;
 
         private Transform _currentTransform;
         private BonusType _currentBonusType;
-        
+
         private Player _player;
         private float _lifeTime;
 
@@ -37,13 +38,13 @@ namespace DontMissTravel.Obstacles
             _player = player;
             _currentBonusType = GetBonusType();
             _lifeTime = DefaultBonusLifeTime;
+            SetBonusVisual();
         }
 
         private void Awake()
         {
             _currentTransform = transform;
             SetActive(false);
-            SetBonusVisual();
         }
 
         public void SetActiveInTime(bool toShow, Vector2 position = default)
@@ -126,6 +127,8 @@ namespace DontMissTravel.Obstacles
                     _player.MakeInvisible();
                     break;
             }
+
+            AudioManager.Instance.PlaySfx(AudioType.Attention);
         }
 
         private BonusType GetBonusType()
@@ -159,13 +162,13 @@ namespace DontMissTravel.Obstacles
         {
             SetBonusPower(BonusType.TimeDelay);
         }
-        
+
         [ContextMenu("Invisible")]
         private void Invisible()
         {
             SetBonusPower(BonusType.Invisible);
         }
-        
+
         [ContextMenu("Speed")]
         private void Speed()
         {

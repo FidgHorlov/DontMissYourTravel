@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using DontMissTravel.Audio;
 using DontMissTravel.Data;
 using DontMissTravel.Gates;
 using DontMissTravel.HideGame;
@@ -9,6 +10,7 @@ using DontMissTravel.Persons;
 using DontMissTravel.Ui;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using AudioType = DontMissTravel.Audio.AudioType;
 using Random = UnityEngine.Random;
 using GameState = DontMissTravel.Data.GameState;
 using WindowName = DontMissTravel.Data.WindowName;
@@ -18,24 +20,22 @@ namespace DontMissTravel
     public class GameController : MonoBehaviour
     {
         public event Action OnTutorialTimeOut;
+        public Action<GameState> OnGameStateChanged;
+        
         private static GameController _instance;
 
         [SerializeField] protected HideGameController _hideGame;
         [SerializeField] private GateController _gateController;
         [SerializeField] private Player _player;
         [Space] [SerializeField] private float _maxGameTime;
-        [Space] [SerializeField] private GameObject _musicMute;
-        [SerializeField] private GameObject _soundMute;
         [Space] [SerializeField] private Bonus _bonus;
 
-        public Action<GameState> OnGameStateChanged;
-
+        private AudioManager _audioManager;
+        
         private List<Vector2> _availableObstaclesPositions;
         private GameState _gameState;
         private Hud _hud;
 
-        private bool _sound;
-        private bool _music;
         private bool _isPhone;
         private bool _gateIsOpen = false;
         private float _timer = 0f;
@@ -44,31 +44,22 @@ namespace DontMissTravel
 
 #region Properties
 
-        public static GameController Instance
-        {
-            get => _instance;
-            set => _instance = value;
-        }
-
-        public bool Sound
-        {
-            get => _sound;
-            set => _sound = value;
-        }
-
-        public bool Music
-        {
-            get => _music;
-            set => _music = value;
-        }
-
-        public bool IsPhone
-        {
-            get => _isPhone;
-            set => _isPhone = value;
-        }
-
+        public static GameController Instance => _instance;
+        public bool IsPhone => _isPhone;
         public GameState GameState => _gameState;
+
+        private AudioManager AudioManager
+        {
+            get
+            {
+                if (_audioManager == null)
+                {
+                    _audioManager = AudioManager.Instance;
+                }
+
+                return _audioManager;
+            }
+        }
 
 #endregion
 
@@ -101,6 +92,7 @@ namespace DontMissTravel
         {
             _hud = Hud.Instance;
             _hud.Controller.SetActive(_isPhone);
+            AudioManager.PlayAmbient();
         }
 
         private void Update()
@@ -163,6 +155,21 @@ namespace DontMissTravel
             _gameState = gameState;
             OnGameStateChanged?.Invoke(gameState);
             Debug.Log($"<b>Game state changed</b> -> {gameState.ToString()}");
+
+            switch (gameState)
+            {
+                case GameState.Play:
+                case GameState.Tutorial:
+                    AudioManager.PlayAmbient();
+                    AudioManager.PlayMusic();
+                    break;
+                case GameState.HideGame:
+                case GameState.Pause:
+                    AudioManager.PauseAmbient();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(gameState), gameState, null);
+            }
         }
 
         public void SetCustomGameTime(float maxTime)
@@ -210,6 +217,7 @@ namespace DontMissTravel
 
         private void OpenGate()
         {
+            AudioManager.Instance.PlaySfx(AudioType.Gate, defaultPitch: true);
             int gateNumber = Random.Range(0, _gateController.GateCount - 1);
             string gateName = _gateController.OpenGate(gateNumber);
             _gateIsOpen = true;
@@ -227,6 +235,7 @@ namespace DontMissTravel
         {
             _hud.Player.SetActive(!toOpen);
             _hud.Playground.SetActive(!toOpen);
+            
             if (toOpen)
             {
                 _hideGame.StartHideGame(enemyName);
@@ -277,7 +286,7 @@ namespace DontMissTravel
 
 #region Game Buttons
 
-        public void PauseExit()
+        private void PauseExit()
         {
             SwitchGameState(GameState.Play);
         }
@@ -287,18 +296,6 @@ namespace DontMissTravel
             SceneManager.LoadScene(0);
             PauseExit();
             _timer = 0;
-        }
-
-        public void SoundOnOff()
-        {
-            _sound = !_sound;
-            _soundMute.SetActive(_sound);
-        }
-
-        public void MusicOnOff()
-        {
-            _music = !_music;
-            _musicMute.SetActive(_music);
         }
 
         public void OnApplicationQuit()

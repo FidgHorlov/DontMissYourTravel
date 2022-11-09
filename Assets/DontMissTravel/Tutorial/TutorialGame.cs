@@ -25,6 +25,12 @@ namespace DontMissTravel.Tutorial
 
         private EnemyName _metEnemyName;
 
+        public void InitGame()
+        {
+            _tutorialPlayer.SetDefaultPosition();
+            _tutorialPlayer.SetPossibleEnemies(_enemies);
+        }
+        
         public void StartMovableTutorial()
         {
             StartCoroutine(MovableTutorialCompleteDelay(MovableTutorialCompleteInvoke));

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using DontMissTravel.Data;
 using UnityEngine;
@@ -19,16 +18,27 @@ namespace DontMissTravel.Ui
         [SerializeField] private InfoSection _currentLevel;
 
         private List<InfoSection> _nonStaticInfoSections;
-        
+
+        private List<InfoSection> NonStaticInfoSections
+        {
+            get
+            {
+                if (_nonStaticInfoSections != null)
+                    return _nonStaticInfoSections;
+                
+                _nonStaticInfoSections = new List<InfoSection>
+                {
+                    _gateWillOpen,
+                    _gateOpen,
+                    _gateClosed,
+                };
+                return _nonStaticInfoSections;
+
+            }
+        }
+
         private void Awake()
         {
-            _nonStaticInfoSections = new List<InfoSection>
-            {
-                _gateWillOpen,
-                _gateOpen,
-                _gateClosed,
-            };
-
             HideAllStaticInfo();
         }
 
@@ -92,7 +102,7 @@ namespace DontMissTravel.Ui
 
         private void HideAllExcept(InfoSection infoSection)
         {
-            foreach (InfoSection section in _nonStaticInfoSections)
+            foreach (InfoSection section in NonStaticInfoSections)
             {
                 if (section != infoSection)
                 {

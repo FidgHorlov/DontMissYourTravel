@@ -1,3 +1,4 @@
+using DontMissTravel.Audio;
 using UnityEngine;
 using UnityEngine.UI;
 using GameState = DontMissTravel.Data.GameState;
@@ -7,16 +8,41 @@ namespace DontMissTravel.Ui
 {
     public class PauseWindow : Window
     {
-        [SerializeField] private Button _resumeGame;
-        [SerializeField] private Button _soundMute;
-        [SerializeField] private Button _musicMute;
+        [SerializeField] private Button _resumeGameButton;
+        [SerializeField] private Button _soundMuteButton;
+        [SerializeField] private Button _musicMuteButton;
+
+        [Space] [SerializeField] private GameObject _soundMuteGameObject;
+        [SerializeField] private GameObject _musicMuteGameObject;
 
         private GameController _gameController;
+        private AudioManager _audioManager;
         private GameState _previousGameState;
 
-        private void Awake()
+        private GameController GameController
         {
-            _gameController = GameController.Instance;
+            get
+            {
+                if (_gameController == null)
+                {
+                    _gameController = GameController.Instance;
+                }
+
+                return _gameController;
+            }
+        }
+
+        private AudioManager AudioManager
+        {
+            get
+            {
+                if (_audioManager == null)
+                {
+                    _audioManager = AudioManager.Instance;
+                }
+                
+                return _audioManager;
+            }
         }
 
         public override void SetActive(bool toActivate)
@@ -24,40 +50,40 @@ namespace DontMissTravel.Ui
             base.SetActive(toActivate);
             if (toActivate)
             {
-                _previousGameState = _gameController.GameState;
+                _previousGameState = GameController.GameState;
             }
         }
 
         protected override void OnEnable()
         {
             base.OnEnable();
-            _resumeGame.onClick.AddListener(OnResumeClick);
-            _soundMute.onClick.AddListener(OnSoundMuteClick);
-            _musicMute.onClick.AddListener(OnMusicMuteClick);
+            _resumeGameButton.onClick.AddListener(OnResumeClick);
+            _soundMuteButton.onClick.AddListener(OnSoundMuteClick);
+            _musicMuteButton.onClick.AddListener(OnMusicMuteClick);
         }
 
         protected override void OnDisable()
         {
             base.OnEnable();
-            _resumeGame.onClick.RemoveListener(OnResumeClick);
-            _soundMute.onClick.RemoveListener(OnSoundMuteClick);
-            _musicMute.onClick.RemoveListener(OnMusicMuteClick);
+            _resumeGameButton.onClick.RemoveListener(OnResumeClick);
+            _soundMuteButton.onClick.RemoveListener(OnSoundMuteClick);
+            _musicMuteButton.onClick.RemoveListener(OnMusicMuteClick);
         }
 
         private void OnResumeClick()
         {
-            Hud.Instance.ShowHideWindow(WindowName.Pause, false);
-            _gameController.SwitchGameState(_previousGameState);
+            Hud.ShowHideWindow(WindowName.Pause, false);
+            GameController.SwitchGameState(_previousGameState);
         }
-        
+
         private void OnMusicMuteClick()
         {
-            _gameController.MusicOnOff();
+            _musicMuteGameObject.SetActive(AudioManager.ToggleMusic());
         }
 
         private void OnSoundMuteClick()
         {
-            _gameController.SoundOnOff();           
+            _soundMuteGameObject.SetActive(AudioManager.ToggleSound());
         }
     }
 }

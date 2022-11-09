@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using DontMissTravel.Data;
 using DontMissTravel.Ui;
 using UnityEngine;
@@ -18,9 +17,11 @@ namespace DontMissTravel.Persons
         private Hud _hud;
         private Rigidbody2D _objectForPull;
         private FixedJoint2D _springJoint;
-        private bool _isAlreadyMet;
         private bool _powerPulling;
         private float _previousObstacleMass;
+        private Vector3 _defaultPosition;
+
+        protected bool IsAlreadyMet;
         
         public bool IsPulling { get; private set; }
 
@@ -30,6 +31,7 @@ namespace DontMissTravel.Persons
         {
             _hud = Hud.Instance;
             _springJoint = GetComponent<FixedJoint2D>();
+            _defaultPosition = transform.localPosition;
         }
 
         private void FixedUpdate()
@@ -74,7 +76,7 @@ namespace DontMissTravel.Persons
                 }
                 case Constants.Tags.Enemy:
                 {
-                    if (_isAlreadyMet)
+                    if (IsAlreadyMet)
                     {
                         return;
                     }
@@ -83,12 +85,18 @@ namespace DontMissTravel.Persons
                     SwitchSprites(PersonAction.Stay);
                     GameController.Instance.OpenHideGame(true, enemyName);
                     Destroy(other.gameObject, 1f);
-                    _isAlreadyMet = true;
+                    IsAlreadyMet = true;
                     break;
                 }
             }
         }
 #endregion
+
+        public void SetDefaultPosition()
+        {
+            transform.localPosition = _defaultPosition;
+            transform.localScale = Vector3.one;
+        }
         
         public void UpgradeSpeed()
         {
@@ -105,7 +113,7 @@ namespace DontMissTravel.Persons
 
         public void OnMeetFinish()
         {
-            _isAlreadyMet = false;
+            IsAlreadyMet = false;
         }
 
         public void ForceStop()

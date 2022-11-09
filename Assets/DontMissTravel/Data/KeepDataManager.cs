@@ -5,9 +5,9 @@ namespace DontMissTravel.Data
     [DefaultExecutionOrder(Constants.ScriptOrder.KeepDataManager)]
     public class KeepDataManager : MonoBehaviour
     {
-        public bool WasGameRun { get; set; }
         public static KeepDataManager Instance { get; private set; }
-        
+        public bool WasGameRun { get; set; }
+
         private void Awake()
         {
             KeepDataManager keepData  = FindObjectOfType<KeepDataManager>();

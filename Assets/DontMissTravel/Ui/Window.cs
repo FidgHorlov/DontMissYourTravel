@@ -1,35 +1,50 @@
-﻿using DG.Tweening;
+﻿using System;
+using DG.Tweening;
+using DontMissTravel.Audio;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using AudioType = DontMissTravel.Audio.AudioType;
 
 namespace DontMissTravel.Ui
 {
     public class Window : MonoBehaviour
     {
-        [SerializeField] private CanvasGroup _canvasGroup;
-        [Space]
-        [SerializeField] private Button _restartGame;
-        [SerializeField] private Button _quitGame;
-        
-        
         private const float AnimationDuration = 0.5f;
+        [SerializeField] private CanvasGroup _canvasGroup;
+        [Space] [SerializeField] private Button _restartGame;
+        [SerializeField] private Button _mainMenu;
+
+        private Hud _hud;
+        public bool IsActive { get; private set; }
+
+        protected Hud Hud
+        {
+            get
+            {
+                if (_hud != null)
+                    return _hud;
+
+                _hud = Hud.Instance;
+                return _hud;
+            }
+        }
 
         protected virtual void OnEnable()
         {
             _restartGame.onClick.AddListener(OnRestartClick);
-            _quitGame.onClick.AddListener(OnQuitClick);
+            _mainMenu.onClick.AddListener(OnMainMenuClick);
         }
 
         protected virtual void OnDisable()
         {
             _restartGame.onClick.RemoveListener(OnRestartClick);
-            _quitGame.onClick.RemoveListener(OnQuitClick);
+            _mainMenu.onClick.RemoveListener(OnMainMenuClick);
         }
 
         public virtual void SetActive(bool toActivate)
         {
+            IsActive = toActivate;
             float targetVisible = toActivate ? 1f : 0f;
             _canvasGroup.DOKill(_canvasGroup);
             if (toActivate)
@@ -55,18 +70,16 @@ namespace DontMissTravel.Ui
             gameObject.SetActive(toActivate);
         }
 
-        private void OnRestartClick()
+        private void OnMainMenuClick()
         {
-            SceneManager.LoadScene("MainScene");
+            AudioManager.Instance.PlaySfx(AudioType.MenuClick);
+            Hud.InvokeMainMenuClick();
         }
 
-        private void OnQuitClick()
+        private void OnRestartClick()
         {
-#if UNITY_EDITOR
-            EditorApplication.isPlaying = false;
-#else
-            Application.Quit();
-#endif
+            AudioManager.Instance.PlaySfx(AudioType.MenuClick);
+            GameController.Instance.Restart();
         }
     }
 }

@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections;
+using DontMissTravel.Audio;
 using DontMissTravel.Data;
 using DontMissTravel.Persons;
 using DontMissTravel.Tutorial;
 using UnityEngine;
+using AudioType = DontMissTravel.Audio.AudioType;
 using Random = UnityEngine.Random;
 
 namespace DontMissTravel.HideGame
@@ -36,7 +38,7 @@ namespace DontMissTravel.HideGame
         private Vector2 _playerPosition1;
         private Vector2 _playerPosition2;
         private Vector2 _initPlayerPosition;
-
+        
         private bool _gameStateIsPause;
 
         public void Init(GameController gameController)
@@ -156,6 +158,7 @@ namespace DontMissTravel.HideGame
 
             if (playerX > 0 && enemyX < 0 || playerX < 0 && enemyX > 0)
             {
+                AudioManager.Instance.PlaySfx(AudioType.HideGameNegative);
                 return;
             }
 
@@ -169,6 +172,7 @@ namespace DontMissTravel.HideGame
                 _gameController.OpenHideGame(false);    
             }
             
+            AudioManager.Instance.PlaySfx(AudioType.HideGamePositive);
             StopCoroutine(nameof(ChangePosition));
         }
     }

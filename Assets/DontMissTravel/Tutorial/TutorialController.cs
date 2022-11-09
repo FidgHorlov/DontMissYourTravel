@@ -7,11 +7,9 @@ namespace DontMissTravel.Tutorial
 {
     public class TutorialController : MonoBehaviour
     {
-        private const float ZoomAnimationDuration = 2f;
-        private const float DefaultZoomPosition = -300f;
         private const float ZoomOutPosition = -620f;
         private const float DecreaseTimeGate = 15f;
-        private const float TutorialGameTime = 20f;
+        private const float TutorialGameTime = 90f;
 
         [SerializeField] private Camera _mainCamera;
         [Space] [SerializeField] private TutorialGame _tutorialGameController;
@@ -41,6 +39,7 @@ namespace DontMissTravel.Tutorial
             _tutorialHud.SetGateWillOpenTime(TutorialGameTime);
             _tutorialHud.ChangeGateState(GateState.WillOpen, TutorialGameTime.ToString(CultureInfo.InvariantCulture));
             _tutorialHud.PrepareTutorialInfo();
+            _tutorialGameController.InitGame();
         }
 
         private void OnDisable()
