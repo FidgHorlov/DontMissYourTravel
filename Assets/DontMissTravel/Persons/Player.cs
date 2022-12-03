@@ -15,6 +15,9 @@ namespace DontMissTravel.Persons
         [SerializeField] private float _speed = 10f;
 
         private Hud _hud;
+        private GameController _gameController;
+        private KeepDataManager _keepDataManager;
+        
         private Rigidbody2D _objectForPull;
         private FixedJoint2D _springJoint;
         private bool _powerPulling;
@@ -26,22 +29,26 @@ namespace DontMissTravel.Persons
         public bool IsPulling { get; private set; }
 
 #region Monobehaviour
-        
-        private void Start()
+
+        protected override void Start()
         {
-            _hud = Hud.Instance;
+            base.Start();
+            _hud = Singleton<Hud>.Instance;
+            _gameController = Singleton<GameController>.Instance;
+            _keepDataManager = Singleton<KeepDataManager>.Instance;
+            
             _springJoint = GetComponent<FixedJoint2D>();
             _defaultPosition = transform.localPosition;
         }
 
         private void FixedUpdate()
         {
-            if (GameController.Instance.GameState != GameState.Play && GameController.Instance.GameState != GameState.Tutorial)
+            if (_keepDataManager.GameState != GameState.Play)
             {
                 return;
             }
             
-            if (!GameController.Instance.IsPhone)
+            if (!_keepDataManager.IsPhone)
             {
                 KeyBoardController();
             }
@@ -83,8 +90,8 @@ namespace DontMissTravel.Persons
                     
                     EnemyName enemyName = other.gameObject.GetComponent<Enemy>().EnemyName;
                     SwitchSprites(PersonAction.Stay);
-                    GameController.Instance.OpenHideGame(true, enemyName);
-                    Destroy(other.gameObject, 1f);
+                    _gameController.OpenHideGame(true, enemyName);
+                    Destroy(other.gameObject, 0.1f);
                     IsAlreadyMet = true;
                     break;
                 }
@@ -195,7 +202,6 @@ namespace DontMissTravel.Persons
             }
             _springJoint.enabled = true;
             _springJoint.connectedBody = _objectForPull;
-            Debug.Log($"Enable Power pull");
         }
 
         private void DisablePowerPull()
@@ -208,23 +214,20 @@ namespace DontMissTravel.Persons
             }
             _springJoint.connectedBody = null;
             _springJoint.enabled = false;
-            Debug.Log($"Disable Power pull");
         }
 
         private void EnableObjectPull(Rigidbody2D other)
-        { 
-            Debug.Log($"Enable pull");
+        {
             _speed /= DragIncreaseDecreaseSpeed;
-            if (GameController.Instance.IsPhone) _hud.PullButton.SetActive(true);
+            if (_keepDataManager.IsPhone) _hud.TogglePullButton(true);
             _objectForPull = other;
             IsPulling = true;
         }
 
         private void DisableObjectPull()
         {
-            Debug.Log($"Disable pull");
             _speed *= DragIncreaseDecreaseSpeed;
-            if (GameController.Instance.IsPhone) _hud.PullButton.SetActive(false);
+            if (_keepDataManager.IsPhone) _hud.TogglePullButton(false);
             _objectForPull = null;
             IsPulling = false;
         }

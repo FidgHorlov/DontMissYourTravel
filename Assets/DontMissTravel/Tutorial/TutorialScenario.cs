@@ -3,20 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using DontMissTravel.Audio;
 using DontMissTravel.Data;
-using DontMissTravel.Ui;
 using UnityEngine;
 using AudioType = DontMissTravel.Audio.AudioType;
 
 namespace DontMissTravel.Tutorial
 {
-    public class TutorialHud : Hud
+    public class TutorialScenario : MonoBehaviour
     {
         public event Action OnFullTutorialCompleted;
         public event Action<TutorialState> TutorialStateChanged;
-
+        
+        [Space]
         [SerializeField] private TutorialHudStage _timeIsOut;
         [SerializeField] private List<TutorialHudStage> _tutorialHudStages;
+
+        private AudioManager _audioManager;
         private TutorialState _currentState;
+        
         public TutorialState CurrentState => _currentState;
 
         private void OnEnable()
@@ -41,9 +44,9 @@ namespace DontMissTravel.Tutorial
             _timeIsOut.OnContinueTutorial -= OnTimeIsOut;
         }
 
-        private void OnTimeIsOut(TutorialState tutorialState)
+        private void Start()
         {
-            OnFullTutorialCompleted?.Invoke();
+            _audioManager = Singleton<AudioManager>.Instance;
         }
 
         private void LateUpdate()
@@ -57,6 +60,11 @@ namespace DontMissTravel.Tutorial
                 
                 OnTutorialStageNext(_currentState);
             }
+        }
+        
+        private void OnTimeIsOut(TutorialState tutorialState)
+        {
+            OnFullTutorialCompleted?.Invoke();
         }
 
         private bool IsPossibleSkip()
@@ -118,7 +126,7 @@ namespace DontMissTravel.Tutorial
             TutorialStateChanged?.Invoke(nextTutorial);
             Debug.Log($"Current tutorial state: {nextTutorial}");
             _currentState = nextTutorial;
-            AudioManager.Instance.PlaySfx(AudioType.MenuClick);
+            _audioManager.PlaySfx(AudioType.MenuClick);
         }
     }
 }

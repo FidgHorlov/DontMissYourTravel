@@ -9,28 +9,32 @@ using Random = UnityEngine.Random;
 
 namespace DontMissTravel.Tutorial
 {
-    public class TutorialGame : GameController
+    public class TutorialGame : MonoBehaviour
     {
         public event Action OnMovableTutorialComplete;
         public event Action OnMetEnemy;
-        public event Action OnMeetOver;
-        public event Action OnPlayerReachGate;
         
         private const float DelayBeforeNextTutorial = 10f;
 
         [SerializeField] private GameObject _obstacle;
         [SerializeField] private TutorialPlayer _tutorialPlayer;
         [SerializeField] private List<TutorialEnemy> _enemies;
-        [SerializeField] private List<Transform> _bonusPositionList;
+        
+        private GameController _gameController;
 
         private EnemyName _metEnemyName;
+
+        private void Start()
+        {
+            _gameController = Singleton<GameController>.Instance;
+        }
 
         public void InitGame()
         {
             _tutorialPlayer.SetDefaultPosition();
             _tutorialPlayer.SetPossibleEnemies(_enemies);
         }
-        
+
         public void StartMovableTutorial()
         {
             StartCoroutine(MovableTutorialCompleteDelay(MovableTutorialCompleteInvoke));
@@ -55,33 +59,9 @@ namespace DontMissTravel.Tutorial
             }
         }
 
-        public void PrepareHideGame()
-        {
-            _hideGame.gameObject.SetActive(true);
-            _hideGame.enabled = false;
-        }
-
-        public void StartHideGame()
-        {
-            _hideGame.enabled = true;
-            _hideGame.StartHideGame(_metEnemyName);
-        }
-
-        public void CloseHideGame()
-        {
-            _hideGame.CloseHideGame();
-            _tutorialPlayer.OnMeetFinish();
-            OnMeetOver?.Invoke();
-        }
-
         public void ForceStopPlayer()
         {
             _tutorialPlayer.ForceStop();
-        }
-
-        protected override void OnPlayerReachedGate()
-        {
-            OnPlayerReachGate?.Invoke();
         }
 
         private void ShowRandomEnemy()
@@ -96,14 +76,15 @@ namespace DontMissTravel.Tutorial
             _metEnemyName = enemyName;
             OnMetEnemy?.Invoke();
             _tutorialPlayer.OnEnemyMeet -= OnEnemyMeet;
-            
+            _gameController.TutorialSetHideGameEnemy(enemyName);
+
             TutorialEnemy enem = _enemies.FirstOrDefault(enemy => enemy.EnemyName == _metEnemyName);
             if (enem == null)
             {
                 Debug.LogError($"[{name}]. Something wrong.");
                 return;
             }
-            
+
             if (enem.gameObject.activeSelf)
             {
                 enem.gameObject.SetActive(false);
@@ -124,16 +105,6 @@ namespace DontMissTravel.Tutorial
         private void MovableTutorialCompleteInvoke()
         {
             OnMovableTutorialComplete?.Invoke();
-        }
-
-        public void ShowBonus()
-        {
-            foreach (Transform bonusPosition in _bonusPositionList)
-            {
-                AddAvailablePositions(bonusPosition.position);
-            }
-            
-            CreateBonus();
         }
     }
 }

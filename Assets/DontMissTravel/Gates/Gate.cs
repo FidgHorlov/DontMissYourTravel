@@ -10,8 +10,7 @@ namespace DontMissTravel.Gates
     {
         [SerializeField] private Image _gateImage;
         [SerializeField] private BoxCollider2D _gateCollider;
-
-        public Action OnPlayerReached;
+        public event Action OnPlayerReached;
         
         public void SetGateStatus(Sprite gateSprite, bool isOpen)
         {

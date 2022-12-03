@@ -7,6 +7,8 @@ namespace DontMissTravel.Ui
     public class WinWindow : Window
     {
         [SerializeField] private Button _resumeGame;
+        private GameSystemManager _gameSystemManager;
+        private Hud _hud;
         
         protected override void OnEnable()
         {
@@ -20,10 +22,17 @@ namespace DontMissTravel.Ui
             _resumeGame.onClick.RemoveListener(OnResumeClick);
         }
 
+        protected override void Start()
+        {
+            base.Start();
+            _gameSystemManager = Singleton<GameSystemManager>.Instance;
+            _hud = Singleton<Hud>.Instance;
+        }
+
         private void OnResumeClick()
         {
-             GameController.Instance.NextLevel();
-             Hud.Instance.ShowHideWindow(WindowName.Win, false);
+            _gameSystemManager.NextLevel();
+            _hud.ShowHideWindow(WindowName.Win, false);
         }
     }
 }

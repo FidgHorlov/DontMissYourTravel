@@ -6,7 +6,7 @@ namespace DontMissTravel.Gates
 {
     public class GateController : MonoBehaviour
     {
-        public Action OnPlayerReachedGate;
+        public event Action OnPlayerReachedGate;
         
         [SerializeField] private List<Gate> _gates;
         [SerializeField] private Sprite _openGateSprite;

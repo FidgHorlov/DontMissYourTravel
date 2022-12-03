@@ -6,6 +6,12 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/DontMissTravel/Content/Scenes/MainScene.unity
+    path: Assets/DontMissTravel/Content/Scenes/InitMenu.unity
     guid: 2cda990e2423bbf4892e6590ba056729
+  - enabled: 1
+    path: Assets/DontMissTravel/Content/Scenes/Game.unity
+    guid: e81748354c1c5174fa464a5e5998302b
+  - enabled: 1
+    path: Assets/DontMissTravel/Content/Scenes/Tutorial.unity
+    guid: bb8ef83b3216dc34e9e1040a1df8ae97
   m_configObjects: {}

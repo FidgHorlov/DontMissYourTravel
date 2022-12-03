@@ -1,16 +1,14 @@
-﻿using DontMissTravel.Audio;
-using DontMissTravel.Ui;
+﻿using DontMissTravel.Ui;
 using UnityEngine;
 using TypeOfLevel = DontMissTravel.Data.TypeOfLevel;
 
 namespace DontMissTravel
 {
-    public class LevelGenerator : MonoBehaviour
+    public class LevelGenerator : Singleton<LevelGenerator>
     {
 #region PrivateProperties
 
         [SerializeField] private int _currentLevel;
-        private static LevelGenerator _instance;
 
         private TypeOfLevel _typeOfLevel;
         private Hud _hud;
@@ -18,12 +16,6 @@ namespace DontMissTravel
 #endregion
 
 #region Properties
-
-        public static LevelGenerator Instance
-        {
-            get => _instance;
-            set => _instance = value;
-        }
 
         public TypeOfLevel TypeOfLevel
         {
@@ -39,9 +31,9 @@ namespace DontMissTravel
 
 #endregion
 
-        private void Awake()
+        protected override void Awake()
         {
-            _instance = this;
+            base.Awake();
             _currentLevel = PlayerPrefs.GetInt("Level");
             if (_currentLevel == 0)
             {
@@ -51,7 +43,7 @@ namespace DontMissTravel
 
         private void Start()
         {
-            _hud = Hud.Instance;
+            _hud = Singleton<Hud>.Instance;
             SetTextCurrentLevel();
         }
 

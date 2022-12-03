@@ -29,7 +29,7 @@ namespace DontMissTravel.Persons
         protected override void Awake()
         {
             base.Awake();
-            GameController.OnGameStateChanged += OnGameStateChanged;
+            KeepDataManager.OnGameStateChanged += OnGameStateChanged;
             bool isRight = Random.Range(0, 2) == 0;
             bool isTop = Random.Range(0, 2) == 0;
             Move(WhereToGo(isRight, isTop), _speed);
@@ -37,7 +37,7 @@ namespace DontMissTravel.Persons
 
         private void OnDestroy()
         {
-            GameController.OnGameStateChanged -= OnGameStateChanged;
+            KeepDataManager.OnGameStateChanged -= OnGameStateChanged;
         }
 
         private void OnGameStateChanged(GameState gameState)
@@ -112,7 +112,7 @@ namespace DontMissTravel.Persons
 
         private void OnCollisionStay2D(Collision2D other)
         {
-            if (GameController.GameState != GameState.Play)
+            if (KeepDataManager.GameState != GameState.Play)
             {
                 StopCoroutine(nameof(CheckThePosition));
                 return;
@@ -130,10 +130,27 @@ namespace DontMissTravel.Persons
             StartCoroutine(nameof(CheckThePosition));
         }
 
+        private void OnTriggerEnter(Collider other)
+        {
+            if (KeepDataManager.GameState != GameState.Play)
+            {
+                return;
+            }
+
+            if (!other.CompareTag(Constants.Tags.Gate))
+            {
+                return;
+            }
+
+            _lastCollisionPosition = transform.position;
+            _currentPersonAction = PersonAction.Stay;
+            StartCoroutine(nameof(CheckThePosition));
+        }
+
         private IEnumerator CheckThePosition()
         {
             yield return new WaitForSeconds(1f);
-            if (GameController.GameState == GameState.HideGame)
+            if (KeepDataManager.GameState == GameState.HideGame)
             {
                 yield break;
             }

@@ -14,7 +14,7 @@ namespace DontMissTravel.Tutorial
         {
             ChangeBonusLifeTime(TutorialBonusLifeTime);
         }
-        
+
         protected override void OnTriggerEnter2D(Collider2D other)
         {
             base.OnTriggerEnter2D(other);

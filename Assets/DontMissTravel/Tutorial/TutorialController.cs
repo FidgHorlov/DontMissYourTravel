@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using DontMissTravel.Data;
+using DontMissTravel.Ui;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace DontMissTravel.Tutorial
 {
@@ -13,53 +16,56 @@ namespace DontMissTravel.Tutorial
 
         [SerializeField] private Camera _mainCamera;
         [Space] [SerializeField] private TutorialGame _tutorialGameController;
-        [SerializeField] private TutorialHud _tutorialHud;
+        [SerializeField] private TutorialScenario _tutorialScenario;
         [Space] [SerializeField] private Camera _playerCamera;
         [SerializeField] private Camera _tutorialCamera;
-        [SerializeField] private TutorialBonus _tutorialBonus;
+        [Space] [SerializeField] private TutorialBonus _tutorialBonus;
+        [SerializeField] private List<Transform> _bonusPositions;
 
         private GameSystemManager _gameSystemManager;
+        private GameController _gameController;
+        private KeepDataManager _keepDataManager;
+        private Hud _hud;
 
         private void Start()
         {
             _mainCamera.transform.position = new Vector3(0f, 0f, ZoomOutPosition);
+            _gameSystemManager = Singleton<GameSystemManager>.Instance;
+            _hud = Singleton<Hud>.Instance;
+            _gameController = Singleton<GameController>.Instance;
+            _keepDataManager = Singleton<KeepDataManager>.Instance;
+
+            _hud.SetGateWillOpenTime(TutorialGameTime);
+            _hud.ChangeGateState(GateState.WillOpen, TutorialGameTime.ToString(CultureInfo.InvariantCulture));
+            _hud.PrepareTutorialInfo();
+
+            _tutorialScenario.OnFullTutorialCompleted += OnTutorialCompleted;
+            _tutorialScenario.TutorialStateChanged += OnTutorialStateChanged;
+            _gameController.OnTutorialTimeOut += OnGameTimeOut;
+            _gameController.SetCustomGameTime(TutorialGameTime);
         }
 
         private void OnEnable()
         {
-            _tutorialHud.OnFullTutorialCompleted += OnTutorialCompleted;
-            _tutorialHud.TutorialStateChanged += OnTutorialStateChanged;
-            _tutorialGameController.OnTutorialTimeOut += OnGameTimeOut;
-
             _tutorialGameController.gameObject.SetActive(false);
             _tutorialGameController.ShowObstacle(false);
             _tutorialGameController.ShowEnemy(false);
-            
-            _tutorialGameController.SetCustomGameTime(TutorialGameTime);
-            _tutorialHud.SetGateWillOpenTime(TutorialGameTime);
-            _tutorialHud.ChangeGateState(GateState.WillOpen, TutorialGameTime.ToString(CultureInfo.InvariantCulture));
-            _tutorialHud.PrepareTutorialInfo();
             _tutorialGameController.InitGame();
         }
 
-        private void OnDisable()
+        private void OnDestroy()
         {
-            _tutorialHud.OnFullTutorialCompleted -= OnTutorialCompleted;
-            _tutorialHud.TutorialStateChanged -= OnTutorialStateChanged;
-            _tutorialGameController.OnTutorialTimeOut -= OnGameTimeOut;
+            _tutorialScenario.OnFullTutorialCompleted -= OnTutorialCompleted;
+            _tutorialScenario.TutorialStateChanged -= OnTutorialStateChanged;
+            _gameController.OnTutorialTimeOut -= OnGameTimeOut;
         }
 
-        public void Initialize(GameSystemManager gameSystemManager)
-        {
-            _gameSystemManager = gameSystemManager;
-        }
-        
         private void OnGameTimeOut()
         {
-            _tutorialHud.ShowTimeIsOut();
-            _tutorialHud.ChangeGateState(GateState.Closed, null);
-            _tutorialGameController.SwitchGameState(GameState.Pause);
-            _tutorialGameController.SetCustomGameTime(TutorialGameTime);
+            _tutorialScenario.ShowTimeIsOut();
+            _hud.ChangeGateState(GateState.Closed, null);
+            _keepDataManager.SwitchGameState(GameState.Pause);
+            _gameController.SetCustomGameTime(TutorialGameTime);
         }
 
         private void OnTutorialStateChanged(TutorialState previousState)
@@ -68,102 +74,110 @@ namespace DontMissTravel.Tutorial
             switch (previousState)
             {
                 case TutorialState.Welcome:
-                    _tutorialHud.SetGateWillOpenTime(TutorialGameTime);
-                    _tutorialGameController.SwitchGameState(GameState.Pause);
+                    _hud.SetGateWillOpenTime(TutorialGameTime);
+                    _keepDataManager.SwitchGameState(GameState.Pause);
                     break;
                 case TutorialState.DepartureIn:
-                    _tutorialGameController.SwitchGameState(GameState.Pause);
+                    _keepDataManager.SwitchGameState(GameState.Pause);
                     break;
                 case TutorialState.Level:
-                    _tutorialGameController.SwitchGameState(GameState.Pause);
+                    _keepDataManager.SwitchGameState(GameState.Pause);
                     break;
                 case TutorialState.Movement:
-                    _tutorialGameController.SwitchGameState(GameState.Tutorial);
+                    _keepDataManager.SwitchGameState(GameState.Play);
                     OnFirstPartTutorialCompleted();
                     break;
                 case TutorialState.Obstacles:
-                    _tutorialGameController.SwitchGameState(GameState.Tutorial);
+                    _keepDataManager.SwitchGameState(GameState.Play);
                     OnMovableTutorialCompleteHud();
                     StartObstaclesTutorial();
                     break;
                 case TutorialState.Enemy:
-                    _tutorialGameController.SwitchGameState(GameState.Tutorial);
+                    _keepDataManager.SwitchGameState(GameState.Play);
                     _tutorialGameController.ShowObstacle(false);
                     _tutorialGameController.ShowEnemy(true);
                     _tutorialGameController.OnMetEnemy += OnMetEnemy;
                     break;
                 case TutorialState.HideGamePreview:
-                    _tutorialGameController.SwitchGameState(GameState.Pause);
+                    _keepDataManager.SwitchGameState(GameState.Pause);
                     _tutorialCamera.gameObject.SetActive(false);
-                    _tutorialHud.Playground.SetActive(false);
-                    _tutorialHud.Player.SetActive(false);
-                    _tutorialGameController.PrepareHideGame();
+                    _hud.HidePlayerAndPlayground(toHide: true);
+                    _gameController.TutorialPrepareHideGame();
                     break;
                 case TutorialState.HideGame:
-                    _tutorialGameController.SwitchGameState(GameState.HideGame);
-                    _tutorialGameController.StartHideGame();
-                    _tutorialGameController.OnMeetOver += OnMeetOver;
+                    _keepDataManager.SwitchGameState(GameState.HideGame);
+                    _gameController.TutorialStartHideGame();
+                    _gameController.OnTutorialMeetOver += OnMeetOver;
                     break;
                 case TutorialState.BonusPreview:
-                    _tutorialGameController.SwitchGameState(GameState.Pause);
+                    _keepDataManager.SwitchGameState(GameState.Pause);
                     _tutorialCamera.gameObject.SetActive(true);
-                    _tutorialHud.Playground.SetActive(true);
-                    _tutorialHud.Player.SetActive(true);
+                    _hud.HidePlayerAndPlayground(toHide: false);
                     break;
                 case TutorialState.Bonus:
-                    _tutorialGameController.SwitchGameState(GameState.Tutorial);
-                    _tutorialGameController.ShowBonus();
+                    _keepDataManager.SwitchGameState(GameState.Play);
                     _tutorialBonus.ChangeBonusLifeTime();
+                    ShowTutorialBonus();
                     _tutorialBonus.OnBonusApplied += OnBonusApplied;
-                    _tutorialGameController.OnPlayerReachGate += OnPlayerReachedGate;
+                    _gameController.OnTutorialReachGate += OnPlayerReachedGate;
                     break;
                 case TutorialState.Remark:
                     _tutorialGameController.ForceStopPlayer();
-                    _tutorialGameController.SwitchGameState(GameState.Pause);
+                    _keepDataManager.SwitchGameState(GameState.Pause);
                     break;
                 case TutorialState.Gate:
-                    _tutorialGameController.SwitchGameState(GameState.Pause);
-                    _tutorialGameController.OpenGateDecreaseMaxTime(DecreaseTimeGate);
+                    _keepDataManager.SwitchGameState(GameState.Pause);
+                    _gameController.OpenGateDecreaseMaxTime(DecreaseTimeGate);
                     break;
                 case TutorialState.TutorialGame:
-                    _tutorialGameController.SwitchGameState(GameState.Tutorial);
+                    _keepDataManager.SwitchGameState(GameState.Play);
                     break;
                 case TutorialState.Complete:
-                    _tutorialGameController.SwitchGameState(GameState.Pause);
+                    _keepDataManager.SwitchGameState(GameState.Pause);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(previousState), previousState, null);
             }
         }
 
-        private void OnPlayerReachedGate()
+        private void ShowTutorialBonus()
         {
-            if (_tutorialHud.CurrentState != TutorialState.TutorialGame)
+            foreach (Transform bonusPosition in _bonusPositions)
             {
-                _tutorialHud.OnTutorialStageNext(_tutorialHud.CurrentState);
-                return;
+                _gameController.AddAvailablePositions(bonusPosition.position);
             }
             
-            _tutorialHud.OnTutorialStageNext(TutorialState.TutorialGame);
-            _tutorialGameController.OnPlayerReachGate -= OnPlayerReachedGate;
+            _tutorialBonus.SetActiveInTime(true, _gameController.GetRandomAvailablePosition());
+        }
+
+        private void OnPlayerReachedGate()
+        {
+            if (_tutorialScenario.CurrentState != TutorialState.TutorialGame)
+            {
+                _tutorialScenario.OnTutorialStageNext(_tutorialScenario.CurrentState);
+                return;
+            }
+
+            _tutorialScenario.OnTutorialStageNext(TutorialState.TutorialGame);
+            _gameController.OnTutorialReachGate -= OnPlayerReachedGate;
         }
 
         private void OnBonusApplied()
         {
-            _tutorialHud.OnTutorialStageNext(TutorialState.Bonus);
+            _tutorialScenario.OnTutorialStageNext(TutorialState.Bonus);
             _tutorialBonus.OnBonusApplied -= OnBonusApplied;
         }
 
         private void OnMetEnemy()
         {
-            _tutorialHud.OnTutorialStageNext(TutorialState.Enemy);
+            _tutorialScenario.OnTutorialStageNext(TutorialState.Enemy);
             _tutorialGameController.OnMetEnemy -= OnMetEnemy;
         }
 
         private void OnMeetOver()
         {
-            _tutorialHud.OnTutorialStageNext(TutorialState.HideGame);
-            _tutorialGameController.OnMeetOver -= OnMeetOver;
+            _tutorialScenario.OnTutorialStageNext(TutorialState.HideGame);
+            _gameController.OnTutorialMeetOver -= OnMeetOver;
         }
 
         private void StartObstaclesTutorial()
@@ -188,24 +202,24 @@ namespace DontMissTravel.Tutorial
 
         private void OnMovableTutorialComplete()
         {
-            _tutorialHud.OnTutorialStageNext(TutorialState.Movement);
+            _tutorialScenario.OnTutorialStageNext(TutorialState.Movement);
             _tutorialGameController.OnMovableTutorialComplete -= OnMovableTutorialComplete;
         }
 
         private void OnTutorialCompleted()
         {
-            _gameSystemManager.OnTutorialClose();
+            _gameSystemManager.ToggleTutorial(toOpen: false);
         }
+
+#region Editor
 
         public void OnFirstPartCompleteEditor()
         {
-#region Editor
-
 #if UNITY_EDITOR
             OnFirstPartTutorialCompleted();
 #endif
+        }
 
 #endregion
-        }
     }
 }

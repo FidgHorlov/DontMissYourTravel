@@ -1,6 +1,7 @@
 ﻿using System;
 using DontMissTravel.Audio;
 using DontMissTravel.Data;
+using DontMissTravel.Tutorial;
 using UnityEngine;
 using UnityEngine.UI;
 using AudioType = DontMissTravel.Audio.AudioType;
@@ -9,12 +10,8 @@ using WindowName = DontMissTravel.Data.WindowName;
 
 namespace DontMissTravel.Ui
 {
-    public class Hud : MonoBehaviour
+    public class Hud : Singleton<Hud>, IHud
     {
-        public event Action OnMainMenuClicked;
-
-        private static Hud _instance;
-
         [SerializeField] private Button _pauseButton;
 
         [Space] [SerializeField] private GameObject _sideInfo;
@@ -31,62 +28,33 @@ namespace DontMissTravel.Ui
         [Space] [SerializeField] private InfoPanel _infoPanel;
 
         private GameState _previousGameState;
-        private bool _onPause;
+        private bool _isPaused;
+        private GameController _gameController;
+        private AudioManager _audioManager;
+        private KeepDataManager _keepDataManager;
 
-#region Properties
+        public bool IsPaused => _isPaused;
 
-        public static Hud Instance => _instance;
-        public GameObject Controller => _controller;
-        public GameObject Player => _player;
-        public GameObject Playground => _playground;
-        public GameObject PullButton => _pullButton;
-
-#endregion
-
-        private void Awake()
+        protected override void Awake()
         {
-            if (_instance != null && _instance != this)
-            {
-                DestroyImmediate(_instance.gameObject);
-            }
-
-            _instance = this;
-            _pauseButton.onClick.AddListener(OnPauseClick);
+            base.Awake();
             SetAllWindowsInvisible();
         }
 
-        private void LateUpdate()
+        private void Start()
         {
-            if (_loseWindow.IsActive || _winWindow.IsActive)
-            {
-                if (Input.GetKeyDown(KeyCode.Return))
-                {
-                    AudioManager.Instance.PlaySfx(AudioType.MenuClick);
-                    GameController.Instance.Restart();
-                    return;   
-                }
-                
-                if (Input.GetKeyDown(KeyCode.Escape))
-                {
-                    InvokeMainMenuClick();
-                }
-            }
-            else
-            {
-                if (Input.GetKeyDown(KeyCode.Return) && _onPause)
-                {
-                    OnPauseClick();
-                    return;
-                }
-
-                if (Input.GetKeyDown(KeyCode.Escape) && !_onPause)
-                {
-                    OnPauseClick();
-                }
-            }
+            _gameController = Singleton<GameController>.Instance;
+            _audioManager = Singleton<AudioManager>.Instance;
+            _keepDataManager = Singleton<KeepDataManager>.Instance;
+            _controller.SetActive(Singleton<KeepDataManager>.Instance.IsPhone);   
         }
 
-        private void OnDestroy()
+        private void OnEnable()
+        {
+            _pauseButton.onClick.AddListener(OnPauseClick);
+        }
+
+        private void OnDisable()
         {
             _pauseButton.onClick.RemoveListener(OnPauseClick);
         }
@@ -111,17 +79,29 @@ namespace DontMissTravel.Ui
             _infoPanel.PrepareTutorialInfo();
         }
 
-        private void OnPauseClick()
+        public void OnPauseClick()
         {
-            AudioManager.Instance.PlaySfx(AudioType.MenuClick);
-            _onPause = !_onPause;
-            ShowHideWindow(WindowName.Pause, _onPause);
-            if (_onPause)
+            _audioManager.PlaySfx(AudioType.MenuClick);
+            _isPaused = !_isPaused;
+            ShowHideWindow(WindowName.Pause, _isPaused);
+            if (_isPaused)
             {
-                _previousGameState = GameController.Instance.GameState;
+                _previousGameState = _keepDataManager.GameState;
             }
 
-            GameController.Instance.SwitchGameState(_onPause ? GameState.Pause : _previousGameState);
+            _keepDataManager.SwitchGameState(_isPaused ? GameState.Pause : _previousGameState);
+        }
+
+        // using for the Hide Game
+        public void HidePlayerAndPlayground(bool toHide)
+        {
+            _player.SetActive(!toHide);
+            _playground.SetActive(!toHide);
+        }
+
+        public void TogglePullButton(bool toActivate)
+        {
+            _pullButton.SetActive(toActivate);
         }
 
         private void SetAllWindowsInvisible()
@@ -177,11 +157,6 @@ namespace DontMissTravel.Ui
         public void SetGreenTicket()
         {
             _infoPanel.SetBonus(Constants.InformationTexts.GreenTicket);
-        }
-
-        public void InvokeMainMenuClick()
-        {
-            OnMainMenuClicked?.Invoke();
         }
     }
 }

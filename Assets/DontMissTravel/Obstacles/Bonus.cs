@@ -5,7 +5,6 @@ using DontMissTravel.Audio;
 using DontMissTravel.Data;
 using DontMissTravel.Persons;
 using UnityEngine;
-using UnityEngine.Purchasing.Extension;
 using UnityEngine.UI;
 using AudioType = DontMissTravel.Audio.AudioType;
 using Random = UnityEngine.Random;
@@ -25,6 +24,8 @@ namespace DontMissTravel.Obstacles
         [SerializeField] private Sprite _speedBoost;
         [SerializeField] private Sprite _invisible;
 
+        private GameController _gameController;
+        private AudioManager _audioManager;
         private Transform _currentTransform;
         private BonusType _currentBonusType;
 
@@ -39,6 +40,8 @@ namespace DontMissTravel.Obstacles
             _currentBonusType = GetBonusType();
             _lifeTime = DefaultBonusLifeTime;
             SetBonusVisual();
+            _gameController = Singleton<GameController>.Instance;
+            _audioManager = Singleton<AudioManager>.Instance;
         }
 
         private void Awake()
@@ -67,7 +70,7 @@ namespace DontMissTravel.Obstacles
                 })
                 .SetId(_bonusImage);
         }
-
+        
         protected void ChangeBonusLifeTime(float newTime)
         {
             _lifeTime = newTime;
@@ -117,7 +120,7 @@ namespace DontMissTravel.Obstacles
             switch (bonusType)
             {
                 case BonusType.TimeDelay:
-                    GameController.Instance.Delay();
+                    _gameController.Delay();
                     IsDelay = true;
                     break;
                 case BonusType.SpeedBoost:
@@ -128,7 +131,7 @@ namespace DontMissTravel.Obstacles
                     break;
             }
 
-            AudioManager.Instance.PlaySfx(AudioType.Attention);
+            _audioManager.PlaySfx(AudioType.Attention);
         }
 
         private BonusType GetBonusType()

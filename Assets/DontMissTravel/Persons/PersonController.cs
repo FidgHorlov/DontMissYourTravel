@@ -1,5 +1,4 @@
-﻿using System;
-using DontMissTravel.Data;
+﻿using DontMissTravel.Data;
 using UnityEngine;
 using UnityEngine.UI;
 using Direction = DontMissTravel.Data.Direction;
@@ -17,40 +16,52 @@ namespace DontMissTravel.Persons
         [Space] [SerializeField] private float _switchSpriteLimitTimer;
 
         [SerializeField] protected PersonAction _currentPersonAction;
-        private Sprite[] _currentSprites;
 
+        private Sprite[] _currentSprites;
         private Transform _currentTransform;
         private float _timer = 0f;
         private int _spriteIndex = 0;
 
         private bool _isPersonStay;
+        private KeepDataManager _keepDataManager;
+
+        protected KeepDataManager KeepDataManager
+        {
+            get
+            {
+                if (_keepDataManager == null)
+                {
+                    _keepDataManager = Singleton<KeepDataManager>.Instance;
+                }
+
+                return _keepDataManager;
+            }
+        }
 
         protected virtual void Awake()
         {
             _currentTransform = transform;
         }
 
-        protected GameController GameController => GameController.Instance;
-
-        private void Start()
+        protected virtual void Start()
         {
-            GameController.OnGameStateChanged += OnGameStateChanged;
+            KeepDataManager.OnGameStateChanged += OnGameStateChanged;
         }
 
         private void OnDestroy()
         {
-            GameController.OnGameStateChanged -= OnGameStateChanged;
+            KeepDataManager.OnGameStateChanged -= OnGameStateChanged;
         }
 
         private void LateUpdate()
         {
-            if (GameController.GameState != GameState.Play && GameController.GameState != GameState.Tutorial)
+            if (KeepDataManager.GameState != GameState.Play)
             {
                 if (_isPersonStay)
                 {
                     return;
                 }
-
+                
                 _isPersonStay = true;
                 _targetImage.sprite = _idleSprite;
                 Move(Direction.Idle, 0f); // when it pause shouldn't be able walk    
@@ -68,7 +79,7 @@ namespace DontMissTravel.Persons
                 {
                     SwitchSprites(PersonAction.Move);
                 }
-                
+
                 return;
             }
 
@@ -110,8 +121,9 @@ namespace DontMissTravel.Persons
                         velocity = Vector2.left;
                         if (_currentPersonAction != PersonAction.Grab)
                         {
-                            scale.x = 1f;   
+                            scale.x = 1f;
                         }
+
                         break;
                     }
                     case Direction.Right:
@@ -121,6 +133,7 @@ namespace DontMissTravel.Persons
                         {
                             scale.x = -1f;
                         }
+
                         break;
                     }
                     case Direction.Up:
@@ -134,12 +147,12 @@ namespace DontMissTravel.Persons
                         break;
                     }
                 }
-                
+
                 if (_currentPersonAction == PersonAction.Grab)
                 {
                     SwitchSprites(PersonAction.Grab);
                     _rigidbody.velocity = velocity * speed;
-                    return;      
+                    return;
                 }
 
                 _currentTransform.localScale = scale;
@@ -154,10 +167,10 @@ namespace DontMissTravel.Persons
                     {
                         SwitchSprites(PersonAction.Grab);
                         _rigidbody.velocity = velocity * speed;
-                        return;      
+                        return;
                     }
                 }
-                
+
                 velocity = Vector2.zero;
                 _rigidbody.angularVelocity = 0f;
                 tempPersonAction = PersonAction.Stay;
@@ -168,7 +181,7 @@ namespace DontMissTravel.Persons
                 _currentPersonAction = tempPersonAction;
                 SwitchSprites(_currentPersonAction);
             }
-            
+
             _rigidbody.velocity = velocity * speed;
         }
 

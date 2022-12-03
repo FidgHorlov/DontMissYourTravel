@@ -8,7 +8,7 @@
         Up,
         Down
     }
-    
+
     public enum GateState
     {
         WillOpen,
@@ -70,8 +70,7 @@
     {
         Play,
         HideGame,
-        Pause,
-        Tutorial
+        Pause
     }
 
     public enum TypeOfLevel
@@ -93,5 +92,20 @@
         TimeDelay,
         SpeedBoost,
         Invisible
+    }
+
+    public enum GameMode
+    {
+        Menu,
+        Instruction,
+        Game,
+        Tutorial
+    }
+
+    public enum SceneEnum
+    {
+        InitMenu,
+        Tutorial,
+        Game
     }
 }

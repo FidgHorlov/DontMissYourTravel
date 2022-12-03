@@ -14,10 +14,8 @@ namespace DontMissTravel.Audio
         HideGameNegative
     }
 
-    public class AudioManager : MonoBehaviour
+    public class AudioManager : Singleton<AudioManager>
     {
-        private static AudioManager _instance;
-        public static AudioManager Instance => _instance;
         private const float AmbientVolume = 0.2f;
         private const float DefaultPitch = 1f;
         private const float PitchMin = -3f;
@@ -30,20 +28,18 @@ namespace DontMissTravel.Audio
 
         private bool _isSoundOn;
         private bool _isMusicOn;
-
-        private void Awake()
+        
+        private void Start()
         {
-            if (_instance != null)
+            AudioManager audioManager = FindObjectOfType<AudioManager>();
+            if (audioManager != this)
             {
-                if (_instance != this)
-                {
-                    DestroyImmediate(gameObject);
-                }
+                Destroy(audioManager);
             }
-
-            _instance = this;
+            
+            DontDestroyOnLoad(this);
         }
-
+        
         public void PlayMusic()
         {
             SetAudio(_musicAudioSource, _audioLibrary.Music.AudioClip);

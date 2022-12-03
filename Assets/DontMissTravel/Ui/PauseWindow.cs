@@ -1,8 +1,7 @@
 using DontMissTravel.Audio;
+using DontMissTravel.Data;
 using UnityEngine;
 using UnityEngine.UI;
-using GameState = DontMissTravel.Data.GameState;
-using WindowName = DontMissTravel.Data.WindowName;
 
 namespace DontMissTravel.Ui
 {
@@ -15,43 +14,14 @@ namespace DontMissTravel.Ui
         [Space] [SerializeField] private GameObject _soundMuteGameObject;
         [SerializeField] private GameObject _musicMuteGameObject;
 
-        private GameController _gameController;
         private AudioManager _audioManager;
-        private GameState _previousGameState;
+        private Hud _hud;
 
-        private GameController GameController
+        protected override void Start()
         {
-            get
-            {
-                if (_gameController == null)
-                {
-                    _gameController = GameController.Instance;
-                }
-
-                return _gameController;
-            }
-        }
-
-        private AudioManager AudioManager
-        {
-            get
-            {
-                if (_audioManager == null)
-                {
-                    _audioManager = AudioManager.Instance;
-                }
-                
-                return _audioManager;
-            }
-        }
-
-        public override void SetActive(bool toActivate)
-        {
-            base.SetActive(toActivate);
-            if (toActivate)
-            {
-                _previousGameState = GameController.GameState;
-            }
+            base.Start();
+            _audioManager = Singleton<AudioManager>.Instance;
+            _hud = Singleton<Hud>.Instance;
         }
 
         protected override void OnEnable()
@@ -72,18 +42,17 @@ namespace DontMissTravel.Ui
 
         private void OnResumeClick()
         {
-            Hud.ShowHideWindow(WindowName.Pause, false);
-            GameController.SwitchGameState(_previousGameState);
+            _hud.OnPauseClick();
         }
 
         private void OnMusicMuteClick()
         {
-            _musicMuteGameObject.SetActive(AudioManager.ToggleMusic());
+            _musicMuteGameObject.SetActive(_audioManager.ToggleMusic());
         }
 
         private void OnSoundMuteClick()
         {
-            _soundMuteGameObject.SetActive(AudioManager.ToggleSound());
+            _soundMuteGameObject.SetActive(_audioManager.ToggleSound());
         }
     }
 }

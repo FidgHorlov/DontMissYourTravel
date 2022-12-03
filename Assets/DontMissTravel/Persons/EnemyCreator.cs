@@ -19,9 +19,9 @@ namespace DontMissTravel.Persons
 
         private IEnumerator Start()
         {
-            _gameController = GameController.Instance;
+            _gameController = Singleton<GameController>.Instance;
 
-            int maxEnemies = LevelGenerator.Instance.CurrentLevel;
+            int maxEnemies = Singleton<LevelGenerator>.Instance.CurrentLevel;
             if (maxEnemies > Constants.EnemiesParameters.MaximumEnemies)
             {
                 maxEnemies = Constants.EnemiesParameters.MaximumEnemies;

@@ -1,7 +1,5 @@
-﻿using System;
-using DG.Tweening;
+﻿using DG.Tweening;
 using DontMissTravel.Audio;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 using AudioType = DontMissTravel.Audio.AudioType;
@@ -15,19 +13,13 @@ namespace DontMissTravel.Ui
         [Space] [SerializeField] private Button _restartGame;
         [SerializeField] private Button _mainMenu;
 
-        private Hud _hud;
-        public bool IsActive { get; private set; }
+        private GameSystemManager _gameSystemManager;
+        private AudioManager _audioManager;
 
-        protected Hud Hud
+        protected virtual void Start()
         {
-            get
-            {
-                if (_hud != null)
-                    return _hud;
-
-                _hud = Hud.Instance;
-                return _hud;
-            }
+            _gameSystemManager = Singleton<GameSystemManager>.Instance;
+            _audioManager = Singleton<AudioManager>.Instance;
         }
 
         protected virtual void OnEnable()
@@ -42,9 +34,8 @@ namespace DontMissTravel.Ui
             _mainMenu.onClick.RemoveListener(OnMainMenuClick);
         }
 
-        public virtual void SetActive(bool toActivate)
+        internal void SetActive(bool toActivate)
         {
-            IsActive = toActivate;
             float targetVisible = toActivate ? 1f : 0f;
             _canvasGroup.DOKill(_canvasGroup);
             if (toActivate)
@@ -72,14 +63,14 @@ namespace DontMissTravel.Ui
 
         private void OnMainMenuClick()
         {
-            AudioManager.Instance.PlaySfx(AudioType.MenuClick);
-            Hud.InvokeMainMenuClick();
+            _audioManager.PlaySfx(AudioType.MenuClick);
+            _gameSystemManager.MainMenu();
         }
 
         private void OnRestartClick()
         {
-            AudioManager.Instance.PlaySfx(AudioType.MenuClick);
-            GameController.Instance.Restart();
+            _audioManager.PlaySfx(AudioType.MenuClick);
+            _gameSystemManager.RestartGame();
         }
     }
 }

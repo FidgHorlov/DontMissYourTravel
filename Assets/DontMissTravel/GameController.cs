@@ -17,12 +17,11 @@ using WindowName = DontMissTravel.Data.WindowName;
 
 namespace DontMissTravel
 {
-    public class GameController : MonoBehaviour
+    public class GameController : Singleton<GameController>
     {
         public event Action OnTutorialTimeOut;
-        public Action<GameState> OnGameStateChanged;
-        
-        private static GameController _instance;
+        public event Action OnTutorialMeetOver;
+        public event Action OnTutorialReachGate;
 
         [SerializeField] protected HideGameController _hideGame;
         [SerializeField] private GateController _gateController;
@@ -31,12 +30,12 @@ namespace DontMissTravel
         [Space] [SerializeField] private Bonus _bonus;
 
         private AudioManager _audioManager;
-        
-        private List<Vector2> _availableObstaclesPositions;
-        private GameState _gameState;
-        private Hud _hud;
 
-        private bool _isPhone;
+        private List<Vector2> _availableObstaclesPositions;
+        private Hud _hud;
+        private KeepDataManager _keepDataManager;
+        private LevelGenerator _levelGenerator;
+
         private bool _gateIsOpen = false;
         private float _timer = 0f;
         private float _timeForBonus;
@@ -44,17 +43,13 @@ namespace DontMissTravel
 
 #region Properties
 
-        public static GameController Instance => _instance;
-        public bool IsPhone => _isPhone;
-        public GameState GameState => _gameState;
-
         private AudioManager AudioManager
         {
             get
             {
                 if (_audioManager == null)
                 {
-                    _audioManager = AudioManager.Instance;
+                    _audioManager = Singleton<AudioManager>.Instance;
                 }
 
                 return _audioManager;
@@ -63,59 +58,71 @@ namespace DontMissTravel
 
 #endregion
 
-        private void Awake()
-        {
-            _instance = FindObjectOfType<GameController>();
-            if (_instance != this)
-            {
-                Destroy(_instance);
-            }
-
-            _gateController.OnPlayerReachedGate += OnPlayerReachedGate;
-            _bonus.Init(player: _player);
-            _hideGame.Init(this);
-
-#if UNITY_ANDROID || UNITY_IOS
-            _isPhone = true;
-#elif UNITY_STANDALONE
-            _isPhone = false;
-#endif
-        }
-
         private void OnEnable()
         {
             CheckDepartureTime();
             _timeForBonus = Random.Range(0, _maxGameTime);
+
+            _gateController.OnPlayerReachedGate += OnPlayerReachedGate;
+            _bonus.Init(player: _player);
+            _hideGame.Init(this);
+        }
+
+        private void OnDisable()
+        {
+            _gateController.OnPlayerReachedGate -= OnPlayerReachedGate;
         }
 
         private void Start()
         {
-            _hud = Hud.Instance;
-            _hud.Controller.SetActive(_isPhone);
+            _timer = 0;
+            _hud = Singleton<Hud>.Instance;
+            _keepDataManager = Singleton<KeepDataManager>.Instance;
+            _levelGenerator = Singleton<LevelGenerator>.Instance;
             AudioManager.PlayAmbient();
+            _keepDataManager.OnGameStateChanged += OnGameSatetChanged;
+            _keepDataManager.IsGameOver = false;
+        }
+
+        private void OnGameSatetChanged(GameState gameState)
+        {
+            switch (gameState)
+            {
+                case GameState.Play:
+                    AudioManager.PlayAmbient();
+                    AudioManager.PlayMusic();
+                    break;
+                case GameState.HideGame:
+                case GameState.Pause:
+                    AudioManager.PauseAmbient();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(gameState), gameState, null);
+            }
         }
 
         private void Update()
         {
-            if (_gameState == GameState.Pause)
+            if (_keepDataManager.GameState == GameState.Pause)
             {
                 return;
             }
 
             float timeLeft = GetTimeLeft();
-            if (timeLeft <= 0)
+            if (timeLeft <= 0 && !_keepDataManager.IsGameOver)
             {
-                if (_gameState == GameState.Tutorial)
+                if (_keepDataManager.GameMode == GameMode.Tutorial)
                 {
                     CheckDepartureTime();
                     _hud.ChangeGateState(GateState.WillOpen, timeLeft.ToString(CultureInfo.CurrentCulture));
                     OnTutorialTimeOut?.Invoke();
                     return;
                 }
-                
+
                 _hud.ChangeGateState(GateState.Closed, null);
                 _hud.ShowHideWindow(WindowName.Lose, true);
-                SwitchGameState(GameState.Pause);
+                _keepDataManager.IsGameOver = true;
+                _keepDataManager.SwitchGameState(GameState.Pause);
                 return;
             }
 
@@ -131,12 +138,10 @@ namespace DontMissTravel
             {
                 _hud.SetGateWillOpenTime(timeLeft);
             }
-            
-            switch (_gameState)
+
+            if (_keepDataManager.GameState.Equals(GameState.HideGame) || _keepDataManager.GameMode.Equals(GameMode.Tutorial))
             {
-                case GameState.Tutorial:
-                case GameState.HideGame:
-                    return;
+                return;
             }
 
             if (timeLeft < _timeForBonus && timeLeft > 0)
@@ -150,28 +155,6 @@ namespace DontMissTravel
             _gateController.OnPlayerReachedGate -= OnPlayerReachedGate;
         }
 
-        public void SwitchGameState(GameState gameState)
-        {
-            _gameState = gameState;
-            OnGameStateChanged?.Invoke(gameState);
-            Debug.Log($"<b>Game state changed</b> -> {gameState.ToString()}");
-
-            switch (gameState)
-            {
-                case GameState.Play:
-                case GameState.Tutorial:
-                    AudioManager.PlayAmbient();
-                    AudioManager.PlayMusic();
-                    break;
-                case GameState.HideGame:
-                case GameState.Pause:
-                    AudioManager.PauseAmbient();
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(gameState), gameState, null);
-            }
-        }
-
         public void SetCustomGameTime(float maxTime)
         {
             _timer = 0f;
@@ -181,7 +164,7 @@ namespace DontMissTravel
                 _hud.SetGateWillOpenTime(maxTime);
             }
         }
-        
+
         public void OpenGateDecreaseMaxTime(float newMaxTime)
         {
             _timer = 0f;
@@ -193,9 +176,18 @@ namespace DontMissTravel
 
         protected virtual void OnPlayerReachedGate()
         {
-            _hud.ShowHideWindow(WindowName.Win, true);
-            SwitchGameState(GameState.Pause);
-            LevelGenerator.Instance.LevelUp();
+            _keepDataManager.SwitchGameState(GameState.Pause);
+            switch (_keepDataManager.GameMode)
+            {
+                case GameMode.Game:
+                    _levelGenerator.LevelUp();
+                    _keepDataManager.IsGameOver = true;
+                    _hud.ShowHideWindow(WindowName.Win, true);
+                    break;
+                case GameMode.Tutorial:
+                    TutorialReachedGate();
+                    break;
+            }
         }
 
         private void CheckDepartureTime()
@@ -203,7 +195,7 @@ namespace DontMissTravel
             _departureTime = _maxGameTime / 2.5f;
         }
 
-        protected void CreateBonus()
+        private void CreateBonus()
         {
             _bonus.SetActiveInTime(true, GetRandomAvailablePosition());
             _timeForBonus = -1;
@@ -215,9 +207,10 @@ namespace DontMissTravel
             return _maxGameTime - _timer;
         }
 
+        [ContextMenu("Open gate")]
         private void OpenGate()
         {
-            AudioManager.Instance.PlaySfx(AudioType.Gate, defaultPitch: true);
+            _audioManager.PlaySfx(AudioType.Gate, defaultPitch: true);
             int gateNumber = Random.Range(0, _gateController.GateCount - 1);
             string gateName = _gateController.OpenGate(gateNumber);
             _gateIsOpen = true;
@@ -233,9 +226,8 @@ namespace DontMissTravel
 
         public void OpenHideGame(bool toOpen, EnemyName enemyName = EnemyName.Nurse1)
         {
-            _hud.Player.SetActive(!toOpen);
-            _hud.Playground.SetActive(!toOpen);
-            
+            Debug.Log($"Open Hide Game. EnemyName = {enemyName}");
+            _hud.HidePlayerAndPlayground(toHide: toOpen);
             if (toOpen)
             {
                 _hideGame.StartHideGame(enemyName);
@@ -244,9 +236,20 @@ namespace DontMissTravel
             {
                 _hideGame.CloseHideGame();
                 _player.OnMeetFinish();
+
+                if (_keepDataManager.GameMode == GameMode.Tutorial)
+                {
+                    OnTutorialMeetOver?.Invoke();
+                }
             }
 
-            SwitchGameState(toOpen ? GameState.HideGame : GameState.Play);
+            if (_keepDataManager.GameMode == GameMode.Tutorial && !toOpen)
+            {
+                // in Tutorial the next Game State is Pause.
+                return;
+            }
+
+            _keepDataManager.SwitchGameState(toOpen ? GameState.HideGame : GameState.Play);
         }
 
         public Vector2 GetRandomAvailablePosition()
@@ -286,36 +289,35 @@ namespace DontMissTravel
 
 #region Game Buttons
 
-        private void PauseExit()
-        {
-            SwitchGameState(GameState.Play);
-        }
-
-        public void Restart()
-        {
-            SceneManager.LoadScene(0);
-            PauseExit();
-            _timer = 0;
-        }
-
         public void OnApplicationQuit()
         {
-            LevelGenerator levelGenerator = LevelGenerator.Instance;
-            if (levelGenerator == null)
+            if (_levelGenerator != null)
             {
-                return;
+                PlayerPrefs.SetInt("Level", _levelGenerator.CurrentLevel);
             }
-
-            PlayerPrefs.SetInt("Level", LevelGenerator.Instance.CurrentLevel);
-        }
-
-        public void NextLevel()
-        {
-            PauseExit();
-            SceneManager.LoadScene(0);
-            print(LevelGenerator.Instance.CurrentLevel);
         }
 
 #endregion
+
+        public void TutorialPrepareHideGame()
+        {
+            _hideGame.gameObject.SetActive(true);
+            _hideGame.enabled = false;
+        }
+
+        public void TutorialSetHideGameEnemy(EnemyName enemyName)
+        {
+            _hideGame.StartHideGame(enemyName);
+        }
+
+        public void TutorialStartHideGame()
+        {
+            _hideGame.enabled = true;
+        }
+
+        private void TutorialReachedGate()
+        {
+            OnTutorialReachGate?.Invoke();
+        }
     }
 }

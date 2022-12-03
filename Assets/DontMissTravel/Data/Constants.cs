@@ -1,4 +1,6 @@
-﻿namespace DontMissTravel.Data
+﻿using System.Diagnostics;
+
+namespace DontMissTravel.Data
 {
     public static class Constants
     {

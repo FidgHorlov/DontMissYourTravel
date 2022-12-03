@@ -31,7 +31,7 @@ namespace DontMissTravel.Obstacles
         private void Start()
         {
             _generatedValues = new List<int>();
-            _gameController = GameController.Instance;
+            _gameController = Singleton<GameController>.Instance;
             
             for (int i = 0; i < _maxObstacles; i++)
             {
