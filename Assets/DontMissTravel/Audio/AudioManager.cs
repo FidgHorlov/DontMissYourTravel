@@ -16,7 +16,7 @@ namespace DontMissTravel.Audio
 
     public class AudioManager : Singleton<AudioManager>
     {
-        private const float AmbientVolume = 0.2f;
+        private const float AmbientVolume = 0.6f;
         private const float DefaultPitch = 1f;
         private const float PitchMin = -3f;
         private const float PitchMax = 3f;

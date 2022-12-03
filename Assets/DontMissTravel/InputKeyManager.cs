@@ -31,6 +31,11 @@ namespace DontMissTravel
             _gameSystemManager = Singleton<GameSystemManager>.Instance;
             _keepDataManager = Singleton<KeepDataManager>.Instance;
             _hud = Singleton<Hud>.Instance;
+
+            if (_keepDataManager.IsPhone)
+            {
+                enabled = false;
+            }
         }
 
         private void LateUpdate()

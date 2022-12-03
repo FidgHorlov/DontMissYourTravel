@@ -2,6 +2,7 @@ using System;
 using DontMissTravel.Audio;
 using DontMissTravel.Data;
 using UnityEditor;
+using UnityEngine; //Using for the "not Editor"
 using AudioType = DontMissTravel.Audio.AudioType;
 
 namespace DontMissTravel
