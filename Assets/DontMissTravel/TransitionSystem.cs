@@ -49,7 +49,7 @@ namespace DontMissTravel
         {
             if (_fadeIn)
             {
-               Camera.main?.FadeIn(_duration);
+                ZoomIn();
                 _fadeIn = false;
             }
             
