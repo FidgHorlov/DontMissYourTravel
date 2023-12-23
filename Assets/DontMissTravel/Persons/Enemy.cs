@@ -5,7 +5,6 @@ using UnityEngine;
 using Random = UnityEngine.Random;
 using Direction = DontMissTravel.Data.Direction;
 
-
 namespace DontMissTravel.Persons
 {
     public class Enemy : PersonController

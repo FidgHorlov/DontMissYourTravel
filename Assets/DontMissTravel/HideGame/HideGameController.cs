@@ -43,6 +43,12 @@ namespace DontMissTravel.HideGame
         private Vector2 _initPlayerPosition;
 
         private bool _gameStateIsPause;
+        private GameObject _currentGameObject;
+
+        private void Awake()
+        {
+            _currentGameObject = gameObject;
+        }
 
         private void Update()
         {
@@ -74,7 +80,7 @@ namespace DontMissTravel.HideGame
         {
             _enemyRectTransform = _enemy.RectTransform;
             SetPositions();
-            gameObject.SetActive(false);
+            _currentGameObject.SetActive(false);
             _audioManager = Singleton<AudioManager>.Instance;
             _keepDataManager = Singleton<KeepDataManager>.Instance;
         }
@@ -82,7 +88,7 @@ namespace DontMissTravel.HideGame
         public void StartHideGame(EnemyName enemyName)
         {
             _player.position = _initPlayerPosition;
-            gameObject.SetActive(true);
+            _currentGameObject.SetActive(true);
             StopCoroutine(nameof(ChangePosition));
             StartCoroutine(nameof(ChangePosition));
             _enemy.SetEnemy(enemyName);
@@ -92,7 +98,7 @@ namespace DontMissTravel.HideGame
         public void CloseHideGame()
         {
             StopCoroutine(nameof(ChangePosition));
-            gameObject.SetActive(false);
+            _currentGameObject.SetActive(false);
             _keepDataManager.OnGameStateChanged -= OnGameStateChanged;
         }
 
