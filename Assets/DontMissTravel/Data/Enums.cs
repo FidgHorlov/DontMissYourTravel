@@ -51,6 +51,7 @@
 
     public enum EnemyName
     {
+        None = -1,
         Policeman1,
         Policeman2,
         Nurse1,

@@ -3,69 +3,70 @@ using System.Collections.Generic;
 using System.Linq;
 using DontMissTravel.Data;
 using UnityEngine;
-using EnemyType = DontMissTravel.Data.EnemyType;
+using Random = UnityEngine.Random;
 
 namespace DontMissTravel.Persons
 {
     public class EnemyCreator : MonoBehaviour
     {
+        [SerializeField] List<EnemySettings> _enemySettings;
         [SerializeField] private List<Enemy> _enemiesList;
-        [SerializeField] private Transform _enemyFolder;
 
         private GameController _gameController;
-        
-        private int _policeCount;
-        private int _nurseCount;
 
         private IEnumerator Start()
         {
+            Debug.Log($"Enemies: {_enemiesList.Count}");
+
             _gameController = Singleton<GameController>.Instance;
 
             int maxEnemies = Singleton<LevelGenerator>.Instance.CurrentLevel;
+            Debug.LogWarning($"Level is: {maxEnemies}");
+
             if (maxEnemies > Constants.EnemiesParameters.MaximumEnemies)
             {
                 maxEnemies = Constants.EnemiesParameters.MaximumEnemies;
-            }
-
-            _policeCount = maxEnemies / 2;
-            _nurseCount = maxEnemies - _policeCount;
-
-            yield return new WaitForSeconds(1f);
-
-            CreateEnemies(_policeCount, EnemyType.Policeman);
-            CreateEnemies(_nurseCount, EnemyType.Nurse);
-        }
-
-        private void CreateEnemies(int count, EnemyType enemyType)
-        {
-            List<Enemy> enemies = new List<Enemy>();
-            foreach (Enemy enemy in _enemiesList)
-            {
-                if (enemy.EnemyType == enemyType)
+                if (maxEnemies > _enemiesList.Count)
                 {
-                    enemies.Add(enemy);   
+                    Debug.LogWarning($"Please, add more enemies dummy into the object pool.");
                 }
             }
 
-            int lastIndexInSelected = enemies.Count - 1;
-            for (int index = 0; index < count; index++)
+            yield return ShowEnemies(maxEnemies);
+        }
+
+        private IEnumerator ShowEnemies(int maxEnemies)
+        {
+            for (int index = 0; index < maxEnemies; index++)
             {
-                CreateEnemy(index % 2 == 0 ? enemies[0] : enemies[lastIndexInSelected]);
+                if (index >= _enemiesList.Count)
+                {
+                    Debug.LogWarning($"Please, add more enemies dummy into the object pool. Index: {index}. Enemies: {maxEnemies}");
+                    yield break;
+                }
+
+                Enemy enemy = _enemiesList[index];
+                enemy.SetEnemy(GetSettings(index));
+                Vector2 availablePosition = _gameController.GetRandomAvailablePosition();
+                enemy.transform.position = availablePosition;
+                _gameController.RemoveAvailablePositions(availablePosition);
+                yield return new WaitForEndOfFrame();
+                enemy.Show();
             }
         }
-        
-        private void CreateEnemy(Enemy enemy)
+
+        private EnemySettings GetSettings(int index)
         {
-            Enemy newEnemy = Instantiate(enemy, _enemyFolder, true);
-            Vector2 availablePosition = _gameController.GetRandomAvailablePosition();
-            newEnemy.transform.position = availablePosition;
-            _gameController.RemoveAvailablePositions(availablePosition);
+     //       Debug.Log($"index: {index}. Index %2 => {index % 2}.");
+            return _enemySettings[index % 2 == 0 ? Random.Range(0, 2) : Random.Range(2, 4)];
         }
 
-
-        private void GetRandomEnemy()
+#if UNITY_EDITOR
+        [ContextMenu("Fetch all enemies")]
+        private void FetchEnemies()
         {
-            
+            _enemiesList = GetComponentsInChildren<Enemy>().ToList();
         }
+#endif
     }
 }

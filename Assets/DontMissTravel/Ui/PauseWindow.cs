@@ -1,5 +1,3 @@
-using DontMissTravel.Audio;
-using DontMissTravel.Data;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,13 +12,10 @@ namespace DontMissTravel.Ui
         [Space] [SerializeField] private GameObject _soundMuteGameObject;
         [SerializeField] private GameObject _musicMuteGameObject;
 
-        private AudioManager _audioManager;
         private Hud _hud;
 
-        protected override void Start()
+        private void Start()
         {
-            base.Start();
-            _audioManager = Singleton<AudioManager>.Instance;
             _hud = Singleton<Hud>.Instance;
         }
 
@@ -47,12 +42,12 @@ namespace DontMissTravel.Ui
 
         private void OnMusicMuteClick()
         {
-            _musicMuteGameObject.SetActive(_audioManager.ToggleMusic());
+            _musicMuteGameObject.SetActive(AudioManager.ToggleMusic());
         }
 
         private void OnSoundMuteClick()
         {
-            _soundMuteGameObject.SetActive(_audioManager.ToggleSound());
+            _soundMuteGameObject.SetActive(AudioManager.ToggleSound());
         }
     }
 }

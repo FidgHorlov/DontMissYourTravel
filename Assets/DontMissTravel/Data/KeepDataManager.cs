@@ -25,10 +25,10 @@ namespace DontMissTravel.Data
             DontDestroyOnLoad(this);
         }
 
-        public void LoadScene(SceneEnum sceneEnumEnum)
+        public void LoadScene(SceneEnum sceneEnum)
         {
-            SceneLoader.LoadScene(sceneEnumEnum);
-            _currentScene = sceneEnumEnum;
+            _currentScene = sceneEnum;
+            SceneLoader.LoadScene(sceneEnum);
         }
 
         public void RestartCurrentScene()
