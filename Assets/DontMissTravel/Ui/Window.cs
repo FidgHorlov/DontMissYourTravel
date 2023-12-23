@@ -16,10 +16,30 @@ namespace DontMissTravel.Ui
         private GameSystemManager _gameSystemManager;
         private AudioManager _audioManager;
 
-        protected virtual void Start()
+        protected AudioManager AudioManager
         {
-            _gameSystemManager = Singleton<GameSystemManager>.Instance;
-            _audioManager = Singleton<AudioManager>.Instance;
+            get
+            {
+                if (_audioManager == null)
+                {
+                    _audioManager = Singleton<AudioManager>.Instance;
+                }
+
+                return _audioManager;
+            }
+        }
+
+        protected  GameSystemManager GameSystemManager
+        {
+            get
+            {
+                if (_gameSystemManager == null)
+                {
+                    _gameSystemManager = Singleton<GameSystemManager>.Instance;
+                }
+
+                return _gameSystemManager;
+            }
         }
 
         protected virtual void OnEnable()
@@ -63,14 +83,14 @@ namespace DontMissTravel.Ui
 
         private void OnMainMenuClick()
         {
-            _audioManager.PlaySfx(AudioType.MenuClick);
-            _gameSystemManager.MainMenu();
+            AudioManager.PlaySfx(AudioType.MenuClick);
+            GameSystemManager.MainMenu();
         }
 
         private void OnRestartClick()
         {
-            _audioManager.PlaySfx(AudioType.MenuClick);
-            _gameSystemManager.RestartGame();
+            AudioManager.PlaySfx(AudioType.MenuClick);
+            GameSystemManager.RestartGame();
         }
     }
 }

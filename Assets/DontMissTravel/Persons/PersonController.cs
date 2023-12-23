@@ -1,4 +1,5 @@
-﻿using DontMissTravel.Data;
+﻿using System;
+using DontMissTravel.Data;
 using UnityEngine;
 using UnityEngine.UI;
 using Direction = DontMissTravel.Data.Direction;
@@ -10,8 +11,8 @@ namespace DontMissTravel.Persons
         [SerializeField] protected Rigidbody2D _rigidbody;
         [SerializeField] protected Collider2D _collider2D;
         [Space] [SerializeField] protected Image _targetImage;
-        [SerializeField] private Sprite _idleSprite;
-        [SerializeField] private Sprite[] _moveSprites;
+        [SerializeField] protected Sprite _idleSprite;
+        [SerializeField] protected Sprite[] _moveSprites;
         [SerializeField] private Sprite[] _grabSprites;
         [Space] [SerializeField] private float _switchSpriteLimitTimer;
 
@@ -45,10 +46,14 @@ namespace DontMissTravel.Persons
 
         protected virtual void Start()
         {
+        }
+
+        protected virtual void OnEnable()
+        {
             KeepDataManager.OnGameStateChanged += OnGameStateChanged;
         }
 
-        private void OnDestroy()
+        protected virtual void OnDisable()
         {
             KeepDataManager.OnGameStateChanged -= OnGameStateChanged;
         }
@@ -61,7 +66,7 @@ namespace DontMissTravel.Persons
                 {
                     return;
                 }
-                
+
                 _isPersonStay = true;
                 _targetImage.sprite = _idleSprite;
                 Move(Direction.Idle, 0f); // when it pause shouldn't be able walk    
@@ -113,7 +118,7 @@ namespace DontMissTravel.Persons
 
             if (!stop)
             {
-                Vector3 scale = _currentTransform.localScale;
+                Vector3 scale = _currentTransform == null ? Vector3.one : _currentTransform.localScale;
                 switch (direction)
                 {
                     case Direction.Left:
@@ -155,7 +160,11 @@ namespace DontMissTravel.Persons
                     return;
                 }
 
-                _currentTransform.localScale = scale;
+                if (_currentTransform != null)
+                {
+                    _currentTransform.localScale = scale;
+                }
+                
                 tempPersonAction = PersonAction.Move;
             }
             else
@@ -187,6 +196,14 @@ namespace DontMissTravel.Persons
 
         protected void SwitchSprites(PersonAction personAction)
         {
+            if (_targetImage == null)
+            {
+                Debug.Log($"Image is null.");
+                Debug.Log($"{gameObject}");
+                Debug.Log($"{name}");
+                return;
+            }
+            
             switch (personAction)
             {
                 case PersonAction.Move:

@@ -2,8 +2,6 @@
 using System.Collections;
 using DontMissTravel.Audio;
 using DontMissTravel.Data;
-using DontMissTravel.Persons;
-using DontMissTravel.Tutorial;
 using UnityEngine;
 using AudioType = DontMissTravel.Audio.AudioType;
 using Random = UnityEngine.Random;
@@ -23,11 +21,12 @@ namespace DontMissTravel.HideGame
         private const float MaxSpeed = 0.15f;
         private const float HowLong = 15f;
 
+        public event Action MiniGameFinished;
+
         [SerializeField] private HideGameEnemy _enemy;
         [SerializeField] private RectTransform _player;
         [SerializeField] private RectTransform _hideGameField;
 
-        private GameController _gameController;
         private RectTransform _enemyRectTransform;
         private AudioManager _audioManager;
         private KeepDataManager _keepDataManager;
@@ -44,71 +43,6 @@ namespace DontMissTravel.HideGame
         private Vector2 _initPlayerPosition;
 
         private bool _gameStateIsPause;
-
-        public void Init(GameController gameController)
-        {
-            _gameController = gameController;
-            _enemyRectTransform = _enemy.RectTransform;
-            SetPositions();
-            gameObject.SetActive(false);
-            _audioManager = Singleton<AudioManager>.Instance;
-            _keepDataManager = Singleton<KeepDataManager>.Instance;
-        }
-
-        private void OnDestroy()
-        {
-            _keepDataManager.OnGameStateChanged -= OnGameStateChanged;
-        }
-
-        private void OnGameStateChanged(GameState gameState)
-        {
-            switch (gameState)
-            {
-                case GameState.HideGame:
-                    _gameStateIsPause = false;
-                    StartCoroutine(nameof(ChangePosition));
-                    break;
-                case GameState.Pause:
-                    _gameStateIsPause = true;
-                    StopCoroutine(nameof(ChangePosition));
-                    break;
-            }
-        }
-
-        public void StartHideGame(EnemyName enemyName)
-        {
-            _player.position = _initPlayerPosition;
-            gameObject.SetActive(true);
-            StopCoroutine(nameof(ChangePosition));
-            StartCoroutine(nameof(ChangePosition));
-            _enemy.SetEnemy(enemyName);
-            _keepDataManager.OnGameStateChanged += OnGameStateChanged;
-        }
-
-        public void CloseHideGame()
-        {
-            StopCoroutine(nameof(ChangePosition));
-            gameObject.SetActive(false);
-            _keepDataManager.OnGameStateChanged -= OnGameStateChanged;
-        }
-
-        private IEnumerator ChangePosition()
-        {
-            _enemyTimer = Time.deltaTime;
-            while (_enemyTimer < HowLong)
-            {
-                _enemyRectTransform.anchoredPosition = _isLeft ? _enemyPosition1 : _enemyPosition2;
-                _isLeft = !_isLeft;
-                _enemyTimer += Time.deltaTime;
-                yield return new WaitForSeconds(GetRandomSpeed());
-            }
-        }
-
-        private float GetRandomSpeed()
-        {
-            return Random.Range(MinSpeed, MaxSpeed);
-        }
-
 
         private void Update()
         {
@@ -130,6 +64,70 @@ namespace DontMissTravel.HideGame
 
             _userMoveTimer = 0;
         }
+
+        private void OnDestroy()
+        {
+            _keepDataManager.OnGameStateChanged -= OnGameStateChanged;
+        }
+
+        public void Init()
+        {
+            _enemyRectTransform = _enemy.RectTransform;
+            SetPositions();
+            gameObject.SetActive(false);
+            _audioManager = Singleton<AudioManager>.Instance;
+            _keepDataManager = Singleton<KeepDataManager>.Instance;
+        }
+        
+        public void StartHideGame(EnemyName enemyName)
+        {
+            _player.position = _initPlayerPosition;
+            gameObject.SetActive(true);
+            StopCoroutine(nameof(ChangePosition));
+            StartCoroutine(nameof(ChangePosition));
+            _enemy.SetEnemy(enemyName);
+            _keepDataManager.OnGameStateChanged += OnGameStateChanged;
+        }
+
+        public void CloseHideGame()
+        {
+            StopCoroutine(nameof(ChangePosition));
+            gameObject.SetActive(false);
+            _keepDataManager.OnGameStateChanged -= OnGameStateChanged;
+        }
+
+        private void OnGameStateChanged(GameState gameState)
+        {
+            switch (gameState)
+            {
+                case GameState.HideGame:
+                    _gameStateIsPause = false;
+                    StartCoroutine(nameof(ChangePosition));
+                    break;
+                case GameState.Pause:
+                    _gameStateIsPause = true;
+                    StopCoroutine(nameof(ChangePosition));
+                    break;
+            }
+        }
+
+        private IEnumerator ChangePosition()
+        {
+            _enemyTimer = Time.deltaTime;
+            while (_enemyTimer < HowLong)
+            {
+                _enemyRectTransform.anchoredPosition = _isLeft ? _enemyPosition1 : _enemyPosition2;
+                _isLeft = !_isLeft;
+                _enemyTimer += Time.deltaTime;
+                yield return new WaitForSeconds(GetRandomSpeed());
+            }
+        }
+
+        private float GetRandomSpeed()
+        {
+            return Random.Range(MinSpeed, MaxSpeed);
+        }
+
 
         private bool IsHorizontalKeyboard()
         {
@@ -183,7 +181,7 @@ namespace DontMissTravel.HideGame
                 return;
             }
 
-            _gameController.OpenHideGame(false);
+            MiniGameFinished?.Invoke();
             _audioManager.PlaySfx(AudioType.HideGamePositive);
             StopCoroutine(nameof(ChangePosition));
         }

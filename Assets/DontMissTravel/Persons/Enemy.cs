@@ -4,7 +4,6 @@ using DontMissTravel.Data;
 using UnityEngine;
 using Random = UnityEngine.Random;
 using Direction = DontMissTravel.Data.Direction;
-using EnemyType = DontMissTravel.Data.EnemyType;
 
 
 namespace DontMissTravel.Persons
@@ -12,7 +11,6 @@ namespace DontMissTravel.Persons
     public class Enemy : PersonController
     {
         [SerializeField] private float _speed = 10f;
-        [SerializeField] private EnemyType _enemyType;
         [SerializeField] private EnemyName _enemyName;
 
         private Direction _previousDirection = Direction.Idle;
@@ -22,17 +20,17 @@ namespace DontMissTravel.Persons
         private bool _isStop;
         private bool _isMeet;
         private float _detectDistance;
+        private GameObject _currentGameObject;
+        private Transform _currentTransform;
 
-        public EnemyType EnemyType => _enemyType;
         public EnemyName EnemyName => _enemyName;
 
         protected override void Awake()
         {
             base.Awake();
-            KeepDataManager.OnGameStateChanged += OnGameStateChanged;
-            bool isRight = Random.Range(0, 2) == 0;
-            bool isTop = Random.Range(0, 2) == 0;
-            Move(WhereToGo(isRight, isTop), _speed);
+            _currentGameObject = gameObject;
+            _currentTransform = transform;
+            Hide();
         }
 
         private void OnDestroy()
@@ -125,8 +123,7 @@ namespace DontMissTravel.Persons
             bool top = contactPoint.y > center.y;
 
             Move(WhereToGo(right, top), _speed);
-
-            _lastCollisionPosition = transform.position;
+            _lastCollisionPosition = _currentTransform.position;
             StartCoroutine(nameof(CheckThePosition));
         }
 
@@ -136,13 +133,15 @@ namespace DontMissTravel.Persons
             {
                 return;
             }
+            
+            Debug.Log($"{_currentGameObject.name} triggered -> {other.gameObject}");
 
             if (!other.CompareTag(Constants.Tags.Gate))
             {
                 return;
             }
 
-            _lastCollisionPosition = transform.position;
+            _lastCollisionPosition = _currentTransform.position;
             _currentPersonAction = PersonAction.Stay;
             StartCoroutine(nameof(CheckThePosition));
         }
@@ -160,12 +159,35 @@ namespace DontMissTravel.Persons
                 yield break;
             }
 
-            if (Vector2.Distance(_lastCollisionPosition, transform.position) < 1.5f)
+            if (Vector2.Distance(_lastCollisionPosition, _currentTransform.position) < 1.5f)
             {
                 bool isRight = Random.Range(0, 2) == 0;
                 bool isTop = Random.Range(0, 2) == 0;
                 Move(WhereToGo(isRight, isTop), _speed);
             }
+        }
+
+        public void Hide()
+        {
+            KeepDataManager.OnGameStateChanged -= OnGameStateChanged;
+            _currentGameObject.SetActive(false);
+        }
+
+        public void Show()
+        {
+            _currentGameObject.SetActive(true);
+            KeepDataManager.OnGameStateChanged += OnGameStateChanged;
+            bool isRight = Random.Range(0, 2) == 0;
+            bool isTop = Random.Range(0, 2) == 0;
+            Move(WhereToGo(isRight, isTop), _speed);
+        }
+
+        public void SetEnemy(EnemySettings settings)
+        {
+            _enemyName = settings.Name; 
+            _idleSprite = settings.IdleSprite;
+            _moveSprites = settings.MovementSprites;
+            _targetImage.sprite = _idleSprite;
         }
     }
 }

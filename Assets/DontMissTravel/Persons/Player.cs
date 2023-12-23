@@ -11,13 +11,12 @@ namespace DontMissTravel.Persons
     {
         private const int DragIncreaseDecreaseSpeed = 2;
         private const float ObstacleLightMass = 5f;
-        
+
         [SerializeField] private float _speed = 10f;
 
         private Hud _hud;
         private GameController _gameController;
-        private KeepDataManager _keepDataManager;
-        
+
         private Rigidbody2D _objectForPull;
         private FixedJoint2D _springJoint;
         private bool _powerPulling;
@@ -25,7 +24,7 @@ namespace DontMissTravel.Persons
         private Vector3 _defaultPosition;
 
         protected bool IsAlreadyMet;
-        
+
         public bool IsPulling { get; private set; }
 
 #region Monobehaviour
@@ -35,20 +34,19 @@ namespace DontMissTravel.Persons
             base.Start();
             _hud = Singleton<Hud>.Instance;
             _gameController = Singleton<GameController>.Instance;
-            _keepDataManager = Singleton<KeepDataManager>.Instance;
-            
+
             _springJoint = GetComponent<FixedJoint2D>();
             _defaultPosition = transform.localPosition;
         }
 
         private void FixedUpdate()
         {
-            if (_keepDataManager.GameState != GameState.Play)
+            if (KeepDataManager.GameState != GameState.Play)
             {
                 return;
             }
-            
-            if (!_keepDataManager.IsPhone)
+
+            if (!KeepDataManager.IsPhone)
             {
                 KeyBoardController();
             }
@@ -60,6 +58,7 @@ namespace DontMissTravel.Persons
                 {
                     return;
                 }
+
                 EnablePowerPull();
             }
             else
@@ -87,16 +86,21 @@ namespace DontMissTravel.Persons
                     {
                         return;
                     }
-                    
-                    EnemyName enemyName = other.gameObject.GetComponent<Enemy>().EnemyName;
+
+                    Enemy enemy = other.gameObject.GetComponent<Enemy>();
                     SwitchSprites(PersonAction.Stay);
-                    _gameController.OpenHideGame(true, enemyName);
-                    Destroy(other.gameObject, 0.1f);
+                    enemy.Hide();
+                    if (enemy != null)
+                    {
+                        _gameController.HideGameSetActive(true, enemy.EnemyName);
+                    }
+                    
                     IsAlreadyMet = true;
                     break;
                 }
             }
         }
+
 #endregion
 
         public void SetDefaultPosition()
@@ -104,7 +108,7 @@ namespace DontMissTravel.Persons
             transform.localPosition = _defaultPosition;
             transform.localScale = Vector3.one;
         }
-        
+
         public void UpgradeSpeed()
         {
             _speed *= Constants.SpeedParameters.SpeedIncrease;
@@ -127,7 +131,7 @@ namespace DontMissTravel.Persons
         {
             Move(Direction.Idle, 0f);
         }
-        
+
         private void CheckCollision()
         {
             RaycastHit2D cast = (Physics2D.CircleCast(transform.position, 50f, transform.up, distance: 30f));
@@ -198,8 +202,9 @@ namespace DontMissTravel.Persons
             if (_objectForPull != null)
             {
                 _previousObstacleMass = _objectForPull.mass;
-                _objectForPull.mass = ObstacleLightMass;   
+                _objectForPull.mass = ObstacleLightMass;
             }
+
             _springJoint.enabled = true;
             _springJoint.connectedBody = _objectForPull;
         }
@@ -210,8 +215,9 @@ namespace DontMissTravel.Persons
             _currentPersonAction = PersonAction.None;
             if (_objectForPull != null && _previousObstacleMass != 0)
             {
-                _objectForPull.mass = _previousObstacleMass;   
+                _objectForPull.mass = _previousObstacleMass;
             }
+
             _springJoint.connectedBody = null;
             _springJoint.enabled = false;
         }
@@ -219,7 +225,11 @@ namespace DontMissTravel.Persons
         private void EnableObjectPull(Rigidbody2D other)
         {
             _speed /= DragIncreaseDecreaseSpeed;
-            if (_keepDataManager.IsPhone) _hud.TogglePullButton(true);
+            if (KeepDataManager.IsPhone)
+            {
+                _hud.TogglePullButton(true);
+            }
+
             _objectForPull = other;
             IsPulling = true;
         }
@@ -227,7 +237,11 @@ namespace DontMissTravel.Persons
         private void DisableObjectPull()
         {
             _speed *= DragIncreaseDecreaseSpeed;
-            if (_keepDataManager.IsPhone) _hud.TogglePullButton(false);
+            if (KeepDataManager.IsPhone)
+            {
+                _hud.TogglePullButton(false);
+            }
+
             _objectForPull = null;
             IsPulling = false;
         }
