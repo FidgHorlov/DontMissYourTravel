@@ -57,7 +57,7 @@ namespace DontMissTravel.Persons
 
         private EnemySettings GetSettings(int index)
         {
-            Debug.Log($"index: {index}. Index %2 => {index % 2}.");
+     //       Debug.Log($"index: {index}. Index %2 => {index % 2}.");
             return _enemySettings[index % 2 == 0 ? Random.Range(0, 2) : Random.Range(2, 4)];
         }
 

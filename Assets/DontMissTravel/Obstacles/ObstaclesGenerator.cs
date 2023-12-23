@@ -43,7 +43,7 @@ namespace DontMissTravel.Obstacles
 
         private void FillAvailablePositions()
         {
-            Debug.Log($"Generated values: {_generatedValues.Count}");
+//            Debug.Log($"Generated values: {_generatedValues.Count}");
             for (int index = 0; index < _obstacles.Count; index++)
             {
                 if (_generatedValues.Any(value => value.Equals(index)))

@@ -8,6 +8,8 @@ namespace DontMissTravel
     {
 #region PrivateProperties
 
+        private const string PlayerPrefsLevelId = "Level";
+
         [SerializeField] private int _currentLevel;
 
         private TypeOfLevel _typeOfLevel;
@@ -34,7 +36,7 @@ namespace DontMissTravel
         protected override void Awake()
         {
             base.Awake();
-            _currentLevel = PlayerPrefs.GetInt("Level");
+            _currentLevel = PlayerPrefs.GetInt(PlayerPrefsLevelId);
             if (_currentLevel == 0)
             {
                 _currentLevel = 0;
@@ -47,10 +49,16 @@ namespace DontMissTravel
             SetTextCurrentLevel();
         }
 
+        public void ClearProgress()
+        {
+            _currentLevel = 0;
+            PlayerPrefs.SetInt(PlayerPrefsLevelId, 0);
+        }
+
         public void LevelUp()
         {
             _currentLevel++;
-            PlayerPrefs.SetInt("Level", _currentLevel);
+            PlayerPrefs.SetInt(PlayerPrefsLevelId, _currentLevel);
             SetTextCurrentLevel();
         }
 

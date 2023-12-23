@@ -44,11 +44,7 @@ namespace DontMissTravel.HideGame
 
         private bool _gameStateIsPause;
         private GameObject _currentGameObject;
-
-        private void Awake()
-        {
-            _currentGameObject = gameObject;
-        }
+        private GameObject CurrentGameObject => _currentGameObject ??= gameObject;
 
         private void Update()
         {
@@ -80,7 +76,7 @@ namespace DontMissTravel.HideGame
         {
             _enemyRectTransform = _enemy.RectTransform;
             SetPositions();
-            _currentGameObject.SetActive(false);
+            CurrentGameObject.SetActive(false);
             _audioManager = Singleton<AudioManager>.Instance;
             _keepDataManager = Singleton<KeepDataManager>.Instance;
         }
@@ -88,7 +84,7 @@ namespace DontMissTravel.HideGame
         public void StartHideGame(EnemyName enemyName)
         {
             _player.position = _initPlayerPosition;
-            _currentGameObject.SetActive(true);
+            CurrentGameObject.SetActive(true);
             StopCoroutine(nameof(ChangePosition));
             StartCoroutine(nameof(ChangePosition));
             _enemy.SetEnemy(enemyName);
@@ -98,7 +94,7 @@ namespace DontMissTravel.HideGame
         public void CloseHideGame()
         {
             StopCoroutine(nameof(ChangePosition));
-            _currentGameObject.SetActive(false);
+            CurrentGameObject.SetActive(false);
             _keepDataManager.OnGameStateChanged -= OnGameStateChanged;
         }
 
@@ -158,7 +154,7 @@ namespace DontMissTravel.HideGame
             float leftCenterX = rectWidth / 4.5f;
             float rightCenterX = leftCenterX * -1f;
 
-            Debug.Log($"Rect width = {rectWidth}. Left center: {leftCenterX}. Right: {rightCenterX}");
+            //Debug.Log($"Rect width = {rectWidth}. Left center: {leftCenterX}. Right: {rightCenterX}");
 
             _enemyPosition1 = _enemyRectTransform.anchoredPosition;
             _enemyPosition2 = _enemyPosition1;
@@ -166,7 +162,7 @@ namespace DontMissTravel.HideGame
             _enemyPosition1.x = leftCenterX;
             _enemyPosition2.x = rightCenterX;
 
-            Debug.Log($"Enemy position 1: {_enemyPosition1}. Enemy position 2: {_enemyPosition2}");
+            //Debug.Log($"Enemy position 1: {_enemyPosition1}. Enemy position 2: {_enemyPosition2}");
 
             _initPlayerPosition = _player.position;
             _playerPosition1 = _initPlayerPosition;
