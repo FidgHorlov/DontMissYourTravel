@@ -1,5 +1,8 @@
 # Don't miss your travel
-![image](https://github.com/FidgHorlov/DontMissYourTravel/assets/110767790/435c2b16-38f6-495d-8619-ff69902d3495)
+### [Play here](https://fidgetik.itch.io/dont-miss-your-travel)
+
+![Cover DontMissTravel](https://github.com/FidgHorlov/DontMissYourTravel/assets/110767790/eeac16b4-082c-4c3c-82ca-8fb166c2f8d1)
+
 
 # Description
 Embark on a delightful adventure where your character is on a time-sensitive mission to catch a flight urgently.
