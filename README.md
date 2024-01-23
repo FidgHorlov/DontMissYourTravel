@@ -1,4 +1,5 @@
 # Don't miss your travel
+## NOTE: If you're here to review some code, please be aware that it was written in 2019.
 ### [Play here](https://fidgetik.itch.io/dont-miss-your-travel)
 
 ![Cover DontMissTravel](https://github.com/FidgHorlov/DontMissYourTravel/assets/110767790/eeac16b4-082c-4c3c-82ca-8fb166c2f8d1)
